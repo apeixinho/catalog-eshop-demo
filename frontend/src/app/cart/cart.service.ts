@@ -117,7 +117,7 @@ export class CartService {
     this.persistReady = true;
   }
 
-  private hydrateFromStorage(): void {
+  private hydrateFromStorage(attempt = 0): void {
     const lines = this.readPersisted();
     if (lines.length === 0) {
       this.persistReady = true;
@@ -133,11 +133,17 @@ export class CartService {
       if (generation !== this.hydrateGeneration) {
         return;
       }
+
       const next: CartItem[] = [];
+      let fetchFailures = 0;
       for (let i = 0; i < lines.length; i++) {
         const product = products[i];
         const line = lines[i];
-        if (!product || !product.active || product.unitsInStock <= 0) {
+        if (!product) {
+          fetchFailures++;
+          continue;
+        }
+        if (!product.active || product.unitsInStock <= 0) {
           continue;
         }
         next.push({
@@ -145,6 +151,21 @@ export class CartService {
           quantity: Math.min(line.quantity, product.unitsInStock),
         });
       }
+
+      // All product GETs failed (network/CORS/boot race). Keep localStorage intact
+      // and retry once — never persist an empty cart from a failed hydrate.
+      if (next.length === 0 && fetchFailures === lines.length) {
+        if (attempt < 1) {
+          window.setTimeout(() => {
+            if (generation === this.hydrateGeneration && !this.persistReady) {
+              this.hydrateFromStorage(attempt + 1);
+            }
+          }, 750);
+        }
+        // Leave persistReady false so the empty in-memory cart is not written.
+        return;
+      }
+
       this.cartItems.set(next);
       this.persistReady = true;
     });

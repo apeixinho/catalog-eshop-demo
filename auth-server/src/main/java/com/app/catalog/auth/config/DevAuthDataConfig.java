@@ -74,7 +74,9 @@ public class DevAuthDataConfig {
                 .requireProofKey(true)
                 .requireAuthorizationConsent(false)
                 .build())
-            .tokenSettings(TokenSettings.builder().build());
+            .tokenSettings(TokenSettings.builder()
+                .reuseRefreshTokens(false)
+                .build());
 
         for (String origin : origins) {
             builder.redirectUri(origin + "/auth/callback");

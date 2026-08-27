@@ -8,12 +8,18 @@ export const routes: Routes = [
     loadComponent: () => import('./products/products-page').then((m) => m.ProductsPage),
   },
   {
+    path: 'products/:id',
+    loadComponent: () =>
+      import('./products/product-detail-page').then((m) => m.ProductDetailPage),
+  },
+  {
     path: 'cart',
     loadComponent: () => import('./cart/cart-page').then((m) => m.CartPage),
   },
   {
     path: 'checkout/result',
-    canActivate: [authGuard],
+    // Public on purpose: payment-service redirects here after Pay/Cancel; access
+    // token is memory-only and is lost on that full-page return.
     loadComponent: () =>
       import('./checkout/checkout-result-page').then((m) => m.CheckoutResultPage),
   },
