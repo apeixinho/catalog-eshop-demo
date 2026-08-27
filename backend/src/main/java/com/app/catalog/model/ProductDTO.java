@@ -13,6 +13,7 @@ public record ProductDTO(
     boolean active,
     int unitsInStock,
     Date dateCreated,
-    Date lastUpdated
+    Date lastUpdated,
+    ProductCategoryDTO category
 ) {
 }

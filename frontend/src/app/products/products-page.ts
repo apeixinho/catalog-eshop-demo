@@ -1,6 +1,7 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { Page, Product, ProductCategory } from '../shared/models';
 import { CartService } from '../cart/cart.service';
@@ -10,7 +11,7 @@ const PAGE_SIZE = 8;
 
 @Component({
   selector: 'app-products-page',
-  imports: [CurrencyPipe, FormsModule],
+  imports: [CurrencyPipe, FormsModule, RouterLink],
   template: `
     <div class="catalog view-enter">
       <section class="filters page-shell">
@@ -51,16 +52,26 @@ const PAGE_SIZE = 8;
           <div class="grid">
             @for (product of products(); track product.id; let i = $index) {
               <article class="product animate-fade-up" [style.animation-delay.ms]="i * 70">
-                <div class="product-image-wrap frame">
-                  <img
-                    class="animate-fade-in"
-                    [src]="imageSrc(product.imageUrl)"
-                    [alt]="product.name"
-                    loading="lazy"
-                  />
-                </div>
+                <a
+                  class="product-image-link"
+                  [routerLink]="['/products', product.id]"
+                  [attr.aria-label]="i18n.t('product.openDetail', { name: product.name })"
+                >
+                  <div class="product-image-wrap frame">
+                    <img
+                      class="animate-fade-in"
+                      [src]="imageSrc(product.imageUrl)"
+                      [alt]="product.name"
+                      loading="lazy"
+                    />
+                  </div>
+                </a>
                 <div class="meta">
-                  <h2>{{ product.name }}</h2>
+                  <h2>
+                    <a class="title-link" [routerLink]="['/products', product.id]">{{
+                      product.name
+                    }}</a>
+                  </h2>
                   @if (product.description) {
                     <div class="desc-wrap">
                       <p class="desc">{{ product.description }}</p>
@@ -199,10 +210,29 @@ const PAGE_SIZE = 8;
       height: 100%;
     }
 
+    .product-image-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      margin-bottom: 1.25rem;
+      outline: none;
+    }
+
+    .product-image-link:focus-visible .frame {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
     .frame {
       aspect-ratio: 3 / 4;
-      margin-bottom: 1.25rem;
       background: var(--surface);
+      overflow: hidden;
+      transition: transform 0.35s ease;
+    }
+
+    .product-image-link:hover .frame,
+    .product-image-link:focus-visible .frame {
+      transform: scale(1.02);
     }
 
     .frame img {
@@ -210,6 +240,12 @@ const PAGE_SIZE = 8;
       height: 100%;
       object-fit: cover;
       display: block;
+      transition: opacity 0.35s ease;
+    }
+
+    .product-image-link:hover img,
+    .product-image-link:focus-visible img {
+      opacity: 0.92;
     }
 
     .meta {
@@ -231,6 +267,17 @@ const PAGE_SIZE = 8;
       -webkit-box-orient: vertical;
       overflow: hidden;
       min-height: calc(1.25em * 2);
+    }
+
+    .title-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .title-link:hover,
+    .title-link:focus-visible {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
     }
 
     @media (min-width: 640px) {

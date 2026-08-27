@@ -84,6 +84,9 @@ public class CatalogServiceImpl implements CatalogService {
 
     private Product loadProductTranslations(Product product) {
         Hibernate.initialize(product.getTranslations());
+        if (product.getCategory() != null) {
+            Hibernate.initialize(product.getCategory().getTranslations());
+        }
         return product;
     }
 
