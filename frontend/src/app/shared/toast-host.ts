@@ -35,14 +35,16 @@ import { NotificationService } from './notification.service';
       padding: 0.9rem 1rem;
       background: var(--fg);
       color: var(--bg);
+      border-radius: var(--radius-md);
       font-size: 0.875rem;
       line-height: 1.4;
       animation: toast-in 0.35s ease-out both;
-      box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 18%, transparent);
+      box-shadow: var(--elev-raised);
     }
 
     .toast--success {
       background: var(--accent);
+      color: var(--accent-on);
     }
 
     .toast p {
