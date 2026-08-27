@@ -8,6 +8,8 @@ import { ToastHost } from './shared/toast-host';
 import { LocaleService } from './i18n/locale.service';
 import { CountryCode } from './i18n/locale.models';
 import { CatalogApiService } from './shared/catalog-api.service';
+import { ThemeService } from './theme/theme.service';
+import { ThemeId } from './theme/theme.models';
 
 @Component({
   selector: 'app-root',
@@ -18,10 +20,6 @@ import { CatalogApiService } from './shared/catalog-api.service';
         <div class="header-inner page-shell">
           <a routerLink="/products" class="brand">Catalog</a>
           <nav class="main-nav" aria-label="Primary">
-            <a routerLink="/products" routerLinkActive="active" class="nav-link">
-              {{ i18n.t('nav.catalog') }}
-            </a>
-
             <a
               routerLink="/cart"
               routerLinkActive="active"
@@ -46,10 +44,25 @@ import { CatalogApiService } from './shared/catalog-api.service';
               }
             </a>
 
-            <label class="locale-picker">
+            <label class="chrome-picker">
+              <span class="sr-only">{{ i18n.t('nav.theme') }}</span>
+              <select
+                class="chrome-select"
+                [ngModel]="theme.themeId()"
+                (ngModelChange)="onThemeChange($event)"
+              >
+                @for (option of theme.options; track option.id) {
+                  <option [ngValue]="option.id">
+                    {{ i18n.t(option.labelKey) }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <label class="chrome-picker">
               <span class="sr-only">{{ i18n.t('nav.locale') }}</span>
               <select
-                class="locale-select"
+                class="chrome-select"
                 [ngModel]="i18n.countryCode()"
                 (ngModelChange)="onLocaleChange($event)"
               >
@@ -61,59 +74,42 @@ import { CatalogApiService } from './shared/catalog-api.service';
               </select>
             </label>
 
-            @if (auth.isAuthenticated()) {
-              <div class="account-menu">
-                <button
-                  type="button"
-                  class="nav-link icon-link account-trigger"
-                  aria-haspopup="true"
-                  [attr.aria-label]="auth.currentUser()?.username || i18n.t('nav.account')"
-                >
-                  <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <circle cx="12" cy="8" r="3.25" fill="none" stroke="currentColor" stroke-width="1.5" />
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      d="M5.5 19.25c1.6-3 4-4.5 6.5-4.5s4.9 1.5 6.5 4.5"
-                    />
-                  </svg>
-                </button>
-                <div class="account-dropdown" role="menu">
+            <div class="account-menu">
+              <button
+                type="button"
+                class="nav-link icon-link account-trigger"
+                aria-haspopup="true"
+                [attr.aria-label]="
+                  auth.isAuthenticated()
+                    ? auth.currentUser()?.username || i18n.t('nav.account')
+                    : i18n.t('nav.signIn')
+                "
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="8" r="3.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    d="M5.5 19.25c1.6-3 4-4.5 6.5-4.5s4.9 1.5 6.5 4.5"
+                  />
+                </svg>
+              </button>
+              <div class="account-dropdown" role="menu">
+                @if (auth.isAuthenticated()) {
                   <p class="account-name">{{ auth.currentUser()?.username }}</p>
                   <a routerLink="/account" role="menuitem">{{ i18n.t('nav.userDetails') }}</a>
                   <button type="button" role="menuitem" (click)="auth.logout()">
                     {{ i18n.t('nav.signOut') }}
                   </button>
-                </div>
-              </div>
-            } @else {
-              <div class="account-menu">
-                <button
-                  type="button"
-                  class="nav-link icon-link account-trigger"
-                  aria-haspopup="true"
-                  [attr.aria-label]="i18n.t('nav.signIn')"
-                >
-                  <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <circle cx="12" cy="8" r="3.25" fill="none" stroke="currentColor" stroke-width="1.5" />
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      d="M5.5 19.25c1.6-3 4-4.5 6.5-4.5s4.9 1.5 6.5 4.5"
-                    />
-                  </svg>
-                </button>
-                <div class="account-dropdown" role="menu">
+                } @else {
                   <button type="button" role="menuitem" (click)="auth.login()">
                     {{ i18n.t('nav.signIn') }}
                   </button>
-                </div>
+                }
               </div>
-            }
+            </div>
           </nav>
         </div>
       </header>
@@ -144,6 +140,22 @@ import { CatalogApiService } from './shared/catalog-api.service';
 
     .site-header {
       border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    :host-context([data-theme='alternative']) .site-header {
+      background: var(--surface);
+      box-shadow: var(--elev-raised);
+      border-bottom-color: transparent;
+    }
+
+    :host-context([data-theme='alternative']) .brand {
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+
+    :host-context([data-theme='alternative']) .main-nav {
+      letter-spacing: 0.01em;
     }
 
     .header-inner {
@@ -241,12 +253,12 @@ import { CatalogApiService } from './shared/catalog-api.service';
       display: block;
     }
 
-    .locale-picker {
+    .chrome-picker {
       display: flex;
       align-items: center;
     }
 
-    .locale-select {
+    .chrome-select {
       max-width: 11rem;
       border: 0;
       border-bottom: 1px solid var(--border);
@@ -260,13 +272,13 @@ import { CatalogApiService } from './shared/catalog-api.service';
     }
 
     @media (min-width: 768px) {
-      .locale-select {
+      .chrome-select {
         max-width: 16rem;
         font-size: 0.8rem;
       }
     }
 
-    .locale-select:focus {
+    .chrome-select:focus {
       outline: none;
       border-color: var(--accent);
     }
@@ -283,8 +295,10 @@ import { CatalogApiService } from './shared/catalog-api.service';
       right: 0;
       min-width: 11rem;
       padding: 0.5rem 0;
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--elev-raised);
       opacity: 0;
       visibility: hidden;
       transform: translateY(4px);
@@ -373,6 +387,7 @@ export class App implements OnInit {
   readonly cart = inject(CartService);
   readonly auth = inject(AuthService);
   readonly i18n = inject(LocaleService);
+  readonly theme = inject(ThemeService);
   private readonly notifications = inject(NotificationService);
   private readonly api = inject(CatalogApiService);
 
@@ -389,5 +404,9 @@ export class App implements OnInit {
 
   onLocaleChange(code: CountryCode): void {
     this.i18n.selectCountry(code);
+  }
+
+  onThemeChange(theme: ThemeId): void {
+    this.theme.select(theme);
   }
 }

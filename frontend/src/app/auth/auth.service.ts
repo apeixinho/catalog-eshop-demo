@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -34,7 +34,8 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly i18n = inject(LocaleService);
-  private readonly cart = inject(CartService);
+  /** Lazy: avoids AuthService → CartService → HttpClient → interceptor → AuthService cycle at boot. */
+  private readonly injector = inject(Injector);
 
   /** Access token stays in memory only (reduces XSS blast radius vs localStorage). */
   private readonly accessToken = signal<string | null>(null);
@@ -131,7 +132,11 @@ export class AuthService {
       );
 
       this.persistTokens(token);
-      await this.router.navigateByUrl(returnUrl);
+      const navigated = await this.router.navigateByUrl(returnUrl, { replaceUrl: true });
+      if (!navigated) {
+        // Guard rejected or navigation cancelled — fall back to a full load of the return URL.
+        window.location.replace(returnUrl.startsWith('/') ? returnUrl : '/checkout');
+      }
     } finally {
       sessionStorage.removeItem(PKCE_VERIFIER_PREFIX + state);
       sessionStorage.removeItem(OAUTH_RETURN_PREFIX + state);
@@ -143,7 +148,7 @@ export class AuthService {
     this.refreshInFlight = null;
     const idToken = sessionStorage.getItem(ID_TOKEN_KEY) ?? this.idToken();
     this.clearSession();
-    this.cart.clearCart();
+    this.injector.get(CartService).clearCart();
     sessionStorage.setItem(FLASH_KEY, 'toast.signedOut');
 
     const postLogout =
@@ -223,7 +228,7 @@ export class AuthService {
   private isExpired(): boolean {
     const raw = sessionStorage.getItem(EXPIRES_AT_KEY);
     if (!raw) {
-      return this.accessToken() != null;
+      return this.accessToken() == null;
     }
     return Date.now() >= Number(raw);
   }
@@ -231,7 +236,7 @@ export class AuthService {
   private needsRefresh(): boolean {
     const raw = sessionStorage.getItem(EXPIRES_AT_KEY);
     if (!raw) {
-      return this.accessToken() != null;
+      return this.accessToken() == null;
     }
     return Date.now() >= Number(raw) - EXPIRY_SKEW_MS;
   }

@@ -303,7 +303,7 @@ import { LocaleService } from '../i18n/locale.service';
 
     .error {
       margin-top: 1rem;
-      color: #a12828;
+      color: var(--danger);
       font-size: 0.875rem;
     }
   `,

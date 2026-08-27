@@ -14,11 +14,16 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -44,7 +49,11 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
-    SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain authorizationServerSecurityFilterChain(
+        HttpSecurity http,
+        RegisteredClientRepository registeredClientRepository,
+        OAuth2TokenGenerator<?> tokenGenerator
+    ) throws Exception {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
             new OAuth2AuthorizationServerConfigurer();
 
@@ -52,6 +61,14 @@ public class AuthorizationServerConfig {
             .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
             .with(authorizationServerConfigurer, authorizationServer -> authorizationServer
                 .oidc(Customizer.withDefaults())
+                .tokenGenerator(tokenGenerator)
+                .clientAuthentication(clientAuth -> clientAuth
+                    .authenticationConverters(converters ->
+                        converters.add(new PublicClientRefreshTokenAuthenticationConverter()))
+                    .authenticationProviders(providers ->
+                        providers.add(new PublicClientRefreshTokenAuthenticationProvider(
+                            registeredClientRepository)))
+                )
             )
             .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
             .exceptionHandling(exceptions -> exceptions
@@ -104,6 +121,19 @@ public class AuthorizationServerConfig {
                 context.getClaims().audience(List.of(audience));
             }
         };
+    }
+
+    @Bean
+    OAuth2TokenGenerator<?> tokenGenerator(
+        JWKSource<SecurityContext> jwkSource,
+        OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer
+    ) {
+        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource));
+        jwtGenerator.setJwtCustomizer(jwtCustomizer);
+        return new DelegatingOAuth2TokenGenerator(
+            jwtGenerator,
+            new PublicClientRefreshTokenGenerator()
+        );
     }
 
     @Bean
