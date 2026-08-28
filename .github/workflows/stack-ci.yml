@@ -1,8 +1,9 @@
 # Stack CI — Compose/Docker smoke tests (separate from per-service unit CI).
 #
 # Branch → environment mapping (git branch ≠ Compose project; this maps when we smoke which stack):
-#   PR/push to staging|main  → always compose.staging.yml (MariaDB / nginx)
-#   Stack file changes       → compose.staging.yml (and compose.dev.yml when on/into dev)
+#   PR/push to dev          → always compose.dev.yml (H2)
+#   PR/push to staging|main → always compose.staging.yml (MariaDB / nginx)
+#   Stack file changes      → also compose.staging.yml on any branch (Docker/Compose paths)
 #
 # This is CI only (no image publish / deploy). GHCR = GitHub Container Registry (optional later).
 name: Stack CI
@@ -86,13 +87,9 @@ jobs:
 
   compose-dev:
     name: Compose dev smoke
-    needs: filter
     if: |
-      needs.filter.outputs.stack == 'true'
-      && (
-        (github.event_name == 'pull_request' && github.base_ref == 'dev')
-        || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
-      )
+      (github.event_name == 'pull_request' && github.base_ref == 'dev')
+      || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
