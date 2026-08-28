@@ -34,7 +34,7 @@ jobs:
               - "compose.dev.yml"
               - "compose.staging.yml"
               - ".env.example"
-              - "deploy/**"
+              - "auth-server/init-db/**"
               - "**/Dockerfile"
               - "**/Dockerfile.dev"
               - "**/Dockerfile.staging"
