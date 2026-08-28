@@ -15,7 +15,7 @@ services:
       - "127.0.0.1:3306:3306"
     volumes:
       - mariadb_data_staging:/var/lib/mysql
-      - ./deploy/mariadb/init:/docker-entrypoint-initdb.d:ro
+      - ./auth-server/init-db:/docker-entrypoint-initdb.d:ro
     networks:
       - eshop-network
     healthcheck:

@@ -28,7 +28,7 @@ The luv2shop reference backend has no Spring Security. We need an in-repo identi
 - Payment completion is independent of the SPA session: the mock payment service redirects the browser and notifies the API via a signed webhook.
 - Backend and auth-server share a fixed issuer/client/audience contract so they can be developed in parallel.
 - Compose networking uses service hostname `auth-server` for server-to-server JWKS; browsers use `localhost:9000`.
-- Staging Compose mounts `deploy/mariadb/init` so `catalog_auth` exists beside `catalog_db`.
+- Staging Compose mounts `auth-server/init-db` so `catalog_auth` exists beside `catalog_db`.
 
 ## References
 
