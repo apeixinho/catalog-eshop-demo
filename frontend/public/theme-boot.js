@@ -1,4 +1,5 @@
 (function () {
+  // Keep normalizeThemeId in sync with frontend/src/app/theme/theme.models.ts
   var STORAGE_KEY = 'catalog.theme';
   var DEFAULT_THEME = 'default';
 

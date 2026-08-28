@@ -328,7 +328,7 @@ export class CheckoutPage {
     city: ['', Validators.required],
     zipCode: ['', Validators.required],
     country: ['', Validators.required],
-    state: ['', Validators.required],
+    state: [''],
   });
 
   constructor() {
@@ -369,9 +369,17 @@ export class CheckoutPage {
     this.submitting.set(true);
     this.error.set(null);
     const value = this.form.getRawValue();
-    const stateId = Number(value.state);
-    if (!Number.isFinite(stateId)) {
-      this.error.set(this.i18n.t('checkout.purchaseFailed'));
+    const states = this.states();
+    let stateId: number | null = null;
+    if (states.length > 0) {
+      stateId = Number(value.state);
+      if (!Number.isFinite(stateId)) {
+        this.error.set(this.i18n.t('checkout.purchaseFailed'));
+        this.submitting.set(false);
+        return;
+      }
+    } else {
+      this.error.set(this.i18n.t('checkout.loadFailed'));
       this.submitting.set(false);
       return;
     }
@@ -411,6 +419,17 @@ export class CheckoutPage {
     });
   }
 
+  private syncStateValidators(required: boolean): void {
+    const control = this.form.controls.state;
+    if (required) {
+      control.setValidators(Validators.required);
+    } else {
+      control.clearValidators();
+      control.setValue('');
+    }
+    control.updateValueAndValidity();
+  }
+
   private loadStates(code: string, stateId: string, seq: number): void {
     this.api.getStates(code).subscribe({
       next: (states) => {
@@ -418,6 +437,7 @@ export class CheckoutPage {
           return;
         }
         this.states.set(states);
+        this.syncStateValidators(states.length > 0);
         if (stateId && !states.some((s) => String(s.id) === String(stateId))) {
           this.form.controls.state.setValue('');
         }

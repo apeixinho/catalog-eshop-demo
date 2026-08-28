@@ -16,7 +16,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
   { id: 'alternative', labelKey: 'theme.alternative' },
 ];
 
-/** Map legacy stored theme ids to the current set. */
+/** Map legacy stored theme ids to the current set (keep in sync with public/theme-boot.js). */
 export function normalizeThemeId(value: string | null): ThemeId | null {
   if (value === 'default' || value === 'catalog') {
     return 'default';
