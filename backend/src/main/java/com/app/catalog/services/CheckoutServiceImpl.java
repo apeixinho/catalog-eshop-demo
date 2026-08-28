@@ -8,6 +8,7 @@ import com.app.catalog.currency.CurrencyRates;
 import com.app.catalog.dto.AddressRequest;
 import com.app.catalog.dto.CustomerRequest;
 import com.app.catalog.dto.OrderItemRequest;
+import com.app.catalog.dto.OrderStatusResponse;
 import com.app.catalog.dto.PaymentWebhookRequest;
 import com.app.catalog.dto.Purchase;
 import com.app.catalog.dto.PurchaseResponse;
@@ -187,6 +188,27 @@ public class CheckoutServiceImpl implements CheckoutService {
             session.sessionId());
 
         return new PurchaseResponse(order.getOrderTrackingNumber(), session.checkoutUrl());
+    }
+
+    @Override
+    @Transactional
+    public OrderStatusResponse getOrderStatus(String orderTrackingNumber, String oauthSub) {
+        if (orderTrackingNumber == null || orderTrackingNumber.isBlank()) {
+            throw new IllegalArgumentException("Order tracking number is required");
+        }
+        if (oauthSub == null || oauthSub.isBlank()) {
+            throw new IllegalArgumentException("Authenticated subject is required");
+        }
+
+        Order order = orderRepository.findByOrderTrackingNumber(orderTrackingNumber.trim())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown order"));
+
+        Customer customer = order.getCustomer();
+        if (customer == null || !oauthSub.equals(customer.getOauthSub())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown order");
+        }
+
+        return new OrderStatusResponse(order.getOrderTrackingNumber(), order.getStatus());
     }
 
     @Override

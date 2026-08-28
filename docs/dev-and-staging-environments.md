@@ -5,7 +5,7 @@
 [Stack CI](../.github/workflows/stack-ci.yml) builds and smoke-tests Compose stacks in ephemeral runners:
 
 - **Staging Compose** (`compose.staging.yml`) — on PRs/pushes to git branches `staging`/`main`, and whenever stack files change.
-- **Dev Compose** (`compose.dev.yml`) — when stack files change on/into git branch `dev`.
+- **Dev Compose** (`compose.dev.yml`) — on every PR/push to git branch `dev`.
 
 This validates Dockerfiles, MariaDB init/Flyway, and health endpoints. It does **not** deploy a shared hosted environment. Git branch names and Compose project names (`eshop-dev` / `eshop-staging`) are related by convention only.
 

@@ -5,23 +5,49 @@ updates:
     target-branch: "dev"
     schedule:
       interval: weekly
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+    # Pin exact versions in package.json; review grouped PRs before merge.
+    versioning-strategy: increase
+
   - package-ecosystem: maven
     directory: /backend
     target-branch: "dev"
     schedule:
       interval: weekly
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+
   - package-ecosystem: maven
     directory: /auth-server
     target-branch: "dev"
     schedule:
       interval: weekly
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+
   - package-ecosystem: maven
     directory: /payment-service
     target-branch: "dev"
     schedule:
       interval: weekly
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+
   - package-ecosystem: github-actions
     directory: /
     target-branch: "dev"
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
