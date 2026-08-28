@@ -30,7 +30,7 @@ Flyway on the auth-server is **disabled** by default (`spring.flyway.enabled: fa
 
 | Service | Storage | Notes |
 |---------|---------|--------|
-| MariaDB | `catalog_db` + `catalog_auth` | Init script `deploy/mariadb/init/01-create-auth-db.sql` |
+| MariaDB | `catalog_db` + `catalog_auth` | Init script `auth-server/init-db/01-create-auth-db.sql` |
 | auth-server | JDBC + Flyway on `catalog_auth` | Profile `staging` (`StagingAuthDataConfig`) |
 | payment-service | In-memory payment sessions | Same mock checkout as dev |
 | backend | Flyway MariaDB migrations | Profile `staging` |

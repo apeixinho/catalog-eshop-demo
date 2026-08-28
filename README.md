@@ -110,7 +110,7 @@ Path-filtered workflows (status badges at the top of this file):
 |------|-----------|
 | PR or push to `dev` | Always `compose.dev.yml` smoke (H2) |
 | PR or push to `staging` / `main` | Always `compose.staging.yml` smoke (MariaDB + nginx) |
-| Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `deploy/**`, …) | Also `compose.staging.yml` smoke on any branch |
+| Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `auth-server/init-db/**`, …) | Also `compose.staging.yml` smoke on any branch |
 
 Smoke = `docker compose up --build --wait`, then curl actuator health, public products API, and the SPA root.
 
