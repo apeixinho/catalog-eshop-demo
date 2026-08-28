@@ -191,7 +191,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public OrderStatusResponse getOrderStatus(String orderTrackingNumber, String oauthSub) {
         if (orderTrackingNumber == null || orderTrackingNumber.isBlank()) {
             throw new IllegalArgumentException("Order tracking number is required");
