@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from './cart/cart.service';
@@ -18,8 +18,8 @@ import { ThemeId } from './theme/theme.models';
     <div class="shell">
       <header class="site-header">
         <div class="header-inner page-shell">
-          <a routerLink="/products" class="brand">Catalog</a>
-          <nav class="main-nav" aria-label="Primary">
+          <a routerLink="/products" class="brand">{{ i18n.t('nav.catalog') }}</a>
+          <nav class="main-nav" [attr.aria-label]="i18n.t('nav.primary')">
             <a
               routerLink="/cart"
               routerLinkActive="active"
@@ -395,8 +395,12 @@ export class App implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly api = inject(CatalogApiService);
 
-  ngOnInit(): void {
+  private readonly syncDocumentLocale = effect(() => {
     document.documentElement.lang = this.i18n.language();
+    document.title = this.i18n.t('nav.catalog');
+  });
+
+  ngOnInit(): void {
     this.notifications.consumeFlash();
     this.api.getCurrencyRates().subscribe({
       next: (rates) => this.i18n.setFxRates(rates),

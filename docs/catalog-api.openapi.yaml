@@ -5,6 +5,7 @@ info:
   description: >
     Catalog and currency rates are public (`lang` selects translation locale with English fallback).
     Checkout purchase requires Bearer JWT with scope catalog.write and an Idempotency-Key header.
+    Authenticated shoppers can poll GET /api/v1/checkout/orders/{trackingNumber} for payment status.
     Catalog unit prices are USD; checkout converts with fixed rates for currencyCode.
     Orders start PENDING; stock is decremented when payment-service calls the payment webhook
     with header X-Payment-Secret (no JWT).

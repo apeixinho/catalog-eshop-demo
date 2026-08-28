@@ -123,7 +123,8 @@ See [Branching and CI](docs/branching-and-ci.md) for the `dev` → `staging` →
 ## Docs
 
 - [Documentation index](docs/README.md)
+- [Branching and CI](docs/branching-and-ci.md) — `dev` → `staging` → `main`, GitHub Rulesets, Dependabot
 - [OAuth2 access policy](docs/oauth2-access-policy.md) — resource server access (catalog, checkout JWT, payment webhook)
 - [Dev and staging environments](docs/dev-and-staging-environments.md) — Compose, MariaDB, Flyway, JWK, payment env
-- [Catalog API OpenAPI](docs/catalog-api.openapi.yaml) — catalog, checkout purchase, and payment webhook
+- [Catalog API OpenAPI](docs/catalog-api.openapi.yaml) — catalog, checkout purchase, order status, payment webhook
 - [Mock payment service](payment-service/README.md) — hosted checkout and webhook

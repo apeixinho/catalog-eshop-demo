@@ -16,7 +16,7 @@ The luv2shop reference backend has no Spring Security. We need an in-repo identi
 4. Issue JWTs (RS256) with audience `catalog-api` and scopes `openid`, `profile`, `catalog.read`, `catalog.write`.
 5. **Access policy** (backend `SecurityFilterChain`):
    - **Permit anonymous:** catalog (products/categories), countries/states (geo), currency rates (`GET /api/v1/currency/**`), OpenAPI/Swagger UI, and `/actuator/health` (probes) for Docker healthchecks.
-   - **Require Bearer JWT + `catalog.write`:** shopper checkout APIs under `/api/v1/checkout/**`, notably `POST /api/v1/checkout/purchase`.
+   - **Require Bearer JWT + `catalog.write`:** shopper checkout APIs under `/api/v1/checkout/**`, notably `POST /api/v1/checkout/purchase` and `GET /api/v1/checkout/orders/{trackingNumber}` (owner-scoped order status for the SPA result page).
    - **Permit without JWT (shared secret):** `POST /api/v1/checkout/payment-webhook` — called by `payment-service` with header `X-Payment-Secret` (not a browser JWT). Hosted checkout pages on `payment-service` are session-token URLs and do not use the catalog IdP.
 6. Demo users are seeded for local/dev (e.g. `user` / `password`); staging uses JDBC-backed users in MariaDB `catalog_auth`.
 7. Access tokens include audience `catalog-api`; the resource server validates `jwt.audiences`.
