@@ -15,17 +15,23 @@ import com.app.catalog.payment.CreatePaymentSessionResponse;
 import com.app.catalog.payment.PaymentClient;
 import com.app.catalog.repository.OrderRepository;
 import com.app.catalog.repository.ProductRepository;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -43,6 +49,9 @@ class OrderAccessIntegrationTest {
 
     @MockitoBean
     private PaymentClient paymentClient;
+
+    @Autowired
+    private Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter;
 
     private String trackingNumber;
 
@@ -67,8 +76,7 @@ class OrderAccessIntegrationTest {
             """;
 
         MvcResult result = mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-order-access").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(userJwt("user-order-access"))
                 .header("Idempotency-Key", "order-access-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
@@ -87,33 +95,22 @@ class OrderAccessIntegrationTest {
 
     @Test
     void userCanListOwnOrders() throws Exception {
-        mockMvc.perform(get("/api/v1/account/orders")
-                .with(jwt().jwt(j -> j.subject("user-order-access").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write")))
+        mockMvc.perform(get("/api/v1/account/orders").with(userJwt("user-order-access")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content[0].orderTrackingNumber").value(trackingNumber));
     }
 
     @Test
     void userCannotAccessManageOrders() throws Exception {
-        mockMvc.perform(get("/api/v1/manage/orders")
-                .with(jwt().jwt(j -> j.subject("user-order-access").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write")))
+        mockMvc.perform(get("/api/v1/manage/orders").with(userJwt("user-order-access")))
             .andExpect(status().isForbidden());
     }
 
-    private static org.springframework.test.web.servlet.request.RequestPostProcessor managerJwt() {
-        return jwt().jwt(j -> j.subject("manager-1").claim("scope", "catalog.write"))
-            .authorities(
-                new SimpleGrantedAuthority("SCOPE_catalog.write"),
-                new SimpleGrantedAuthority("ROLE_MANAGER"));
-    }
-
-    private static org.springframework.test.web.servlet.request.RequestPostProcessor adminJwt() {
-        return jwt().jwt(j -> j.subject("admin-1").claim("scope", "catalog.write"))
-            .authorities(
-                new SimpleGrantedAuthority("SCOPE_catalog.write"),
-                new SimpleGrantedAuthority("ROLE_ADMIN"));
+    @Test
+    void manageEndpointsRejectJwtWithoutRolesClaim() throws Exception {
+        mockMvc.perform(get("/api/v1/manage/orders")
+                .with(jwtWithClaims(j -> j.subject("manager-1").claim("scope", "catalog.write"))))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -150,7 +147,7 @@ class OrderAccessIntegrationTest {
             .andExpect(jsonPath("$.status").value("CANCELLED"));
 
         mockMvc.perform(delete("/api/v1/manage/orders/" + orderId).with(managerJwt()))
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -178,5 +175,26 @@ class OrderAccessIntegrationTest {
 
         mockMvc.perform(delete("/api/v1/admin/customers/" + id).with(adminJwt()))
             .andExpect(status().isNoContent());
+    }
+
+    /** JWT claims only — uses the app's {@code SecurityConfig#jwtGrantedAuthoritiesConverter}. */
+    private RequestPostProcessor userJwt(String subject) {
+        return jwtWithClaims(j -> j.subject(subject).claim("scope", "catalog.write"));
+    }
+
+    private RequestPostProcessor managerJwt() {
+        return jwtWithClaims(j -> j.subject("manager-1")
+            .claim("scope", "catalog.write")
+            .claim("roles", List.of("USER", "MANAGER")));
+    }
+
+    private RequestPostProcessor adminJwt() {
+        return jwtWithClaims(j -> j.subject("admin-1")
+            .claim("scope", "catalog.write")
+            .claim("roles", List.of("USER", "ADMIN")));
+    }
+
+    private RequestPostProcessor jwtWithClaims(Consumer<Jwt.Builder> customizer) {
+        return jwt().jwt(customizer).authorities(jwtGrantedAuthoritiesConverter);
     }
 }
