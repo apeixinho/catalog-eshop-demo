@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -182,5 +183,52 @@ class CheckoutPaymentIntegrationTest {
 
         assertThat(orderRepository.findByOrderTrackingNumber(tracking).orElseThrow().getStatus())
             .isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    void orderStatusRequiresAuthAndReturnsOwnerStatus() throws Exception {
+        when(paymentClient.createSession(any()))
+            .thenReturn(new CreatePaymentSessionResponse(
+                "sess-status", "http://localhost:8091/checkout/sess-status"));
+
+        MvcResult placed = mockMvc.perform(post("/api/v1/checkout/purchase")
+                .with(jwt().jwt(j -> j.subject("user-status").claim("scope", "catalog.write"))
+                    .authorities(() -> "SCOPE_catalog.write"))
+                .header("Idempotency-Key", "status-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(PURCHASE_BODY.formatted("status@example.com")))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        String tracking = objectMapper.readTree(placed.getResponse().getContentAsString())
+            .get("orderTrackingNumber").asText();
+
+        mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking))
+            .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking)
+                .with(jwt().jwt(j -> j.subject("other-user").claim("scope", "catalog.write"))
+                    .authorities(() -> "SCOPE_catalog.write")))
+            .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking)
+                .with(jwt().jwt(j -> j.subject("user-status").claim("scope", "catalog.write"))
+                    .authorities(() -> "SCOPE_catalog.write")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("PENDING"));
+
+        mockMvc.perform(post("/api/v1/checkout/payment-webhook")
+                .header("X-Payment-Secret", "dev-payment-secret")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"sessionId":"sess-status","status":"SUCCEEDED","orderTrackingNumber":"%s"}
+                    """.formatted(tracking)))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking)
+                .with(jwt().jwt(j -> j.subject("user-status").claim("scope", "catalog.write"))
+                    .authorities(() -> "SCOPE_catalog.write")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("PAID"));
     }
 }

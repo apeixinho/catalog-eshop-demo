@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -50,6 +52,11 @@ public class DevAuthDataConfig {
     @Bean
     RegisteredClientRepository registeredClientRepository() {
         return new InMemoryRegisteredClientRepository(spaClient(clientId, frontendOrigin));
+    }
+
+    @Bean
+    OAuth2AuthorizationService authorizationService() {
+        return new InMemoryOAuth2AuthorizationService();
     }
 
     static RegisteredClient spaClient(String clientId, String frontendOrigin) {

@@ -79,6 +79,14 @@ export class CatalogApiService {
     );
   }
 
+  getOrderStatus(
+    trackingNumber: string,
+  ): Observable<{ orderTrackingNumber: string; status: 'PENDING' | 'PAID' | 'CANCELLED' }> {
+    return this.http.get<{ orderTrackingNumber: string; status: 'PENDING' | 'PAID' | 'CANCELLED' }>(
+      `${this.base}/checkout/orders/${encodeURIComponent(trackingNumber)}`,
+    );
+  }
+
   private withLang(params: HttpParams): HttpParams {
     return params.set('lang', this.i18n.language());
   }

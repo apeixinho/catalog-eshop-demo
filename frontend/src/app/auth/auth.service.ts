@@ -43,6 +43,9 @@ export class AuthService {
   private refreshInFlight: Promise<string | null> | null = null;
   private sessionEpoch = 0;
 
+  /** True while restoring session from refresh token after a full-page load. */
+  readonly sessionRestoring = signal(false);
+
   readonly isAuthenticated = computed(() => !!this.accessToken() && !this.isExpired());
 
   readonly currentUser = computed<AuthUser | null>(() => {
@@ -65,7 +68,8 @@ export class AuthService {
   constructor() {
     // Restore session from refresh token after reload.
     if (sessionStorage.getItem(REFRESH_TOKEN_KEY)) {
-      void this.ensureValidAccessToken();
+      this.sessionRestoring.set(true);
+      void this.ensureValidAccessToken().finally(() => this.sessionRestoring.set(false));
     }
   }
 
