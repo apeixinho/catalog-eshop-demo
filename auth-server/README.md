@@ -14,7 +14,7 @@ Spring Authorization Server 7.1 (Spring Boot 4.1 / Spring Security 7) issuing JW
 | default / `dev` | In-memory (`DevAuthDataConfig`) | None (Flyway off) |
 | `staging` | JDBC + Flyway (`StagingAuthDataConfig`) | MariaDB `catalog_auth` |
 
-Demo accounts (seed only): `user` / `password`, `admin` / `password`.
+Demo accounts (seed only): `user` / `password`, `manager` / `password`, `admin` / `password`.
 
 ## Contract
 

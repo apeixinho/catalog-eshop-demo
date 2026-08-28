@@ -104,6 +104,13 @@ import { ThemeId } from './theme/theme.models';
                 } @else if (auth.isAuthenticated()) {
                   <p class="account-name">{{ auth.currentUser()?.username }}</p>
                   <a routerLink="/account" role="menuitem">{{ i18n.t('nav.userDetails') }}</a>
+                  <a routerLink="/account/orders" role="menuitem">{{ i18n.t('nav.orderDetails') }}</a>
+                  @if (auth.isManager()) {
+                    <a routerLink="/manage/orders" role="menuitem">{{ i18n.t('nav.manageOrders') }}</a>
+                    <a routerLink="/manage/customers" role="menuitem">{{
+                      i18n.t('nav.manageCustomers')
+                    }}</a>
+                  }
                   <button type="button" role="menuitem" (click)="auth.logout()">
                     {{ i18n.t('nav.signOut') }}
                   </button>

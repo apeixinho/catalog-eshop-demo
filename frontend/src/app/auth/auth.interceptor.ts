@@ -17,7 +17,7 @@ function isCatalogApiUrl(url: string): boolean {
 function requiresAuth(url: string): boolean {
   try {
     const target = new URL(url, window.location.origin);
-    return /\/checkout\/(purchase|orders\/)/.test(target.pathname);
+    return /\/(checkout\/(purchase|orders\/)|account\/|manage\/|admin\/)/.test(target.pathname);
   } catch {
     return false;
   }

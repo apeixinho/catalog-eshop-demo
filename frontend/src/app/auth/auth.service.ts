@@ -18,6 +18,7 @@ interface TokenResponse {
 export interface AuthUser {
   username: string;
   subject: string;
+  roles: string[];
 }
 
 const PKCE_VERIFIER_PREFIX = 'catalog.pkce.verifier.';
@@ -52,7 +53,7 @@ export class AuthService {
     if (!this.isAuthenticated()) {
       return null;
     }
-    const claims = this.decodeClaims(this.idToken()) ?? this.decodeClaims(this.accessToken());
+    const claims = this.decodeClaims(this.accessToken()) ?? this.decodeClaims(this.idToken());
     if (!claims) {
       return null;
     }
@@ -62,8 +63,14 @@ export class AuthService {
       (typeof claims['sub'] === 'string' && claims['sub']) ||
       'Account';
     const subject = typeof claims['sub'] === 'string' ? claims['sub'] : username;
-    return { username, subject };
+    return { username, subject, roles: this.readRoles(claims) };
   });
+
+  readonly isManager = computed(
+    () => this.isAuthenticated() && (this.hasRole('MANAGER') || this.hasRole('ADMIN')),
+  );
+
+  readonly isAdmin = computed(() => this.isAuthenticated() && this.hasRole('ADMIN'));
 
   constructor() {
     // Restore session from refresh token after reload.
@@ -243,6 +250,18 @@ export class AuthService {
       return this.accessToken() == null;
     }
     return Date.now() >= Number(raw) - EXPIRY_SKEW_MS;
+  }
+
+  hasRole(role: string): boolean {
+    return this.currentUser()?.roles.includes(role) ?? false;
+  }
+
+  private readRoles(claims: Record<string, unknown>): string[] {
+    const roles = claims['roles'];
+    if (Array.isArray(roles)) {
+      return roles.filter((role): role is string => typeof role === 'string');
+    }
+    return [];
   }
 
   private decodeClaims(token: string | null): Record<string, unknown> | null {
