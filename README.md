@@ -47,7 +47,7 @@ cd frontend && npm start
 - Auth: http://localhost:9000  
 - Payment: http://localhost:8091  
 
-Demo logins (local/dev/staging seed only): `user` / `password`, `admin` / `password`.
+Demo logins (local/dev/staging seed only): `user` / `password`, `manager` / `password`, `admin` / `password`.
 
 Catalog GETs are public (`?lang=` for translated names). Checkout requires PKCE login and scope `catalog.write`, plus an `Idempotency-Key` header. The API binds the order to the JWT `sub`, builds lines from `{productId, quantity}`, prices from catalog USD × fixed FX rates for `currencyCode`, upserts the customer by oauth subject, and creates a **PENDING** order without decrementing stock. The SPA redirects to the hosted payment page; after Pay, a signed webhook decrements stock and sets `PAID` (or `CANCELLED` on cancel / stock failure).
 
