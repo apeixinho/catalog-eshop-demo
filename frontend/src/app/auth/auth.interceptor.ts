@@ -1,6 +1,6 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { from, switchMap } from 'rxjs';
+import { EMPTY, from, switchMap } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { environment } from '../../environments/environment';
 
@@ -14,6 +14,15 @@ function isCatalogApiUrl(url: string): boolean {
   }
 }
 
+function requiresAuth(url: string): boolean {
+  try {
+    const target = new URL(url, window.location.origin);
+    return /\/checkout\/(purchase|orders\/)/.test(target.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   if (!isCatalogApiUrl(req.url)) {
@@ -22,6 +31,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return from(auth.ensureValidAccessToken()).pipe(
     switchMap((token) => {
+      if (!token && requiresAuth(req.url)) {
+        const returnUrl = window.location.pathname + window.location.search;
+        void auth.login(returnUrl);
+        return EMPTY;
+      }
       if (!token) {
         return next(req);
       }

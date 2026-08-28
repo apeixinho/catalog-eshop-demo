@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,5 +51,16 @@ class AuthServerApplicationTests {
     void loginPageIsReachable() throws Exception {
         mockMvc.perform(get("/login").accept(MediaType.TEXT_HTML))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void refreshTokenGrantAcceptsPublicClientWithoutSecret() throws Exception {
+        mockMvc.perform(post("/oauth2/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("grant_type", "refresh_token")
+                .param("refresh_token", "not-a-real-token")
+                .param("client_id", "catalog-spa"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("invalid_grant"));
     }
 }

@@ -159,6 +159,27 @@ paths:
           description: Validation, inactive product, or insufficient stock
         '401':
           description: Missing or invalid JWT
+  /api/v1/checkout/orders/{trackingNumber}:
+    get:
+      summary: Order payment status for the authenticated customer (SPA result page)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: trackingNumber
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Order status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderStatusResponse'
+        '401':
+          description: Missing or invalid JWT
+        '404':
+          description: Unknown order or not owned by caller
   /api/v1/checkout/payment-webhook:
     post:
       summary: Finalize payment from mock payment-service (shared secret, no JWT)
@@ -234,6 +255,14 @@ components:
       properties:
         orderTrackingNumber: { type: string }
         paymentUrl: { type: string, format: uri }
+    OrderStatusResponse:
+      type: object
+      required: [orderTrackingNumber, status]
+      properties:
+        orderTrackingNumber: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
     PaymentWebhookRequest:
       type: object
       required: [sessionId, status, orderTrackingNumber]

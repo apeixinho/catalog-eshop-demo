@@ -80,9 +80,11 @@ import { ThemeId } from './theme/theme.models';
                 class="nav-link icon-link account-trigger"
                 aria-haspopup="true"
                 [attr.aria-label]="
-                  auth.isAuthenticated()
-                    ? auth.currentUser()?.username || i18n.t('nav.account')
-                    : i18n.t('nav.signIn')
+                  auth.sessionRestoring()
+                    ? i18n.t('nav.account')
+                    : auth.isAuthenticated()
+                      ? auth.currentUser()?.username || i18n.t('nav.account')
+                      : i18n.t('nav.signIn')
                 "
               >
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -97,7 +99,9 @@ import { ThemeId } from './theme/theme.models';
                 </svg>
               </button>
               <div class="account-dropdown" role="menu">
-                @if (auth.isAuthenticated()) {
+                @if (auth.sessionRestoring()) {
+                  <p class="account-name">{{ i18n.t('nav.restoringSession') }}</p>
+                } @else if (auth.isAuthenticated()) {
                   <p class="account-name">{{ auth.currentUser()?.username }}</p>
                   <a routerLink="/account" role="menuitem">{{ i18n.t('nav.userDetails') }}</a>
                   <button type="button" role="menuitem" (click)="auth.logout()">

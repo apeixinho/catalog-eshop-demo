@@ -1,14 +1,22 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
 import { CartService } from '../cart/cart.service';
 import { LocaleService } from '../i18n/locale.service';
+import { CatalogApiService } from '../shared/catalog-api.service';
+
+type ResultStatus = 'loading' | 'success' | 'cancelled' | 'failed';
 
 @Component({
   selector: 'app-checkout-result-page',
   imports: [RouterLink],
   template: `
     <section class="result view-enter page-shell">
-      @if (status() === 'success') {
+      @if (status() === 'loading') {
+        <p class="eyebrow">{{ i18n.t('checkout.verifying') }}</p>
+        <h1>{{ i18n.t('checkout.placingOrder') }}</h1>
+      } @else if (status() === 'success') {
         <p class="eyebrow">{{ i18n.t('checkout.confirmed') }}</p>
         <h1>{{ i18n.t('checkout.paidTitle') }}</h1>
         <p class="lead">{{ i18n.t('checkout.paidBody') }}</p>
@@ -89,24 +97,58 @@ import { LocaleService } from '../i18n/locale.service';
 export class CheckoutResultPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly cart = inject(CartService);
+  private readonly api = inject(CatalogApiService);
+  private readonly auth = inject(AuthService);
   readonly i18n = inject(LocaleService);
 
-  readonly status = signal<'success' | 'cancelled' | 'failed'>('failed');
+  readonly status = signal<ResultStatus>('loading');
   readonly tracking = signal<string | null>(null);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
-    const raw = (params.get('status') ?? 'failed').toLowerCase();
-    const status = raw === 'success' ? 'success' : raw === 'cancelled' ? 'cancelled' : 'failed';
-    this.status.set(status);
-
     const tracking =
       params.get('tracking') ?? sessionStorage.getItem('catalog.pending.tracking');
-    this.tracking.set(tracking);
     sessionStorage.removeItem('catalog.pending.tracking');
 
-    if (status === 'success') {
-      this.cart.clearCart();
+    if (!tracking) {
+      this.status.set('failed');
+      return;
     }
+
+    this.tracking.set(tracking);
+    void this.resolveStatus(tracking);
+  }
+
+  private async resolveStatus(tracking: string): Promise<void> {
+    const token = await this.auth.ensureValidAccessToken();
+    if (!token) {
+      const returnUrl = `/checkout/result?tracking=${encodeURIComponent(tracking)}`;
+      void this.auth.login(returnUrl);
+      return;
+    }
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        const order = await firstValueFrom(this.api.getOrderStatus(tracking));
+        if (order.status === 'PAID') {
+          this.status.set('success');
+          this.cart.clearCart();
+          return;
+        }
+        if (order.status === 'CANCELLED') {
+          this.status.set('cancelled');
+          return;
+        }
+      } catch {
+        this.status.set('failed');
+        return;
+      }
+
+      if (attempt < 5) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
+
+    this.status.set('failed');
   }
 }
