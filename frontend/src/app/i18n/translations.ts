@@ -4,6 +4,7 @@ export type TranslationDict = Record<string, string>;
 
 const en: TranslationDict = {
   'nav.catalog': 'Catalog',
+  'nav.primary': 'Primary navigation',
   'nav.cart': 'Cart',
   'nav.signIn': 'Sign in',
   'nav.signOut': 'Sign out',
@@ -63,9 +64,6 @@ const en: TranslationDict = {
   'checkout.total': 'Total',
   'checkout.empty': 'Your cart is empty.',
   'checkout.confirmed': 'Order confirmed',
-  'checkout.thankYou': 'Thank you',
-  'checkout.thankYouBody':
-    'Your order has been placed. A confirmation will arrive by email shortly.',
   'checkout.tracking': 'Tracking number',
   'checkout.continue': 'Continue shopping',
   'checkout.purchaseFailed': 'Purchase failed. Sign in again or check the API.',
@@ -78,6 +76,9 @@ const en: TranslationDict = {
   'checkout.paymentFailedTitle': 'Payment could not be completed',
   'checkout.paymentFailedBody':
     'Stock may no longer be available, or payment failed. Your cart is unchanged.',
+  'checkout.pendingTitle': 'Payment still processing',
+  'checkout.pendingBody':
+    'Your bank may still be confirming payment. Check your email for a receipt, or contact support with your tracking number.',
   'checkout.tryAgain': 'Return to checkout',
   'account.title': 'User details',
   'account.username': 'Username',
@@ -106,6 +107,7 @@ const en: TranslationDict = {
 
 const pt: TranslationDict = {
   'nav.catalog': 'Catálogo',
+  'nav.primary': 'Navegação principal',
   'nav.cart': 'Carrinho',
   'nav.signIn': 'Entrar',
   'nav.signOut': 'Sair',
@@ -165,9 +167,6 @@ const pt: TranslationDict = {
   'checkout.total': 'Total',
   'checkout.empty': 'O seu carrinho está vazio.',
   'checkout.confirmed': 'Encomenda confirmada',
-  'checkout.thankYou': 'Obrigado',
-  'checkout.thankYouBody':
-    'A sua encomenda foi registada. Em breve receberá uma confirmação por email.',
   'checkout.tracking': 'Número de seguimento',
   'checkout.continue': 'Continuar a comprar',
   'checkout.purchaseFailed': 'Falha na compra. Entre novamente ou verifique a API.',
@@ -180,6 +179,9 @@ const pt: TranslationDict = {
   'checkout.paymentFailedTitle': 'Não foi possível concluir o pagamento',
   'checkout.paymentFailedBody':
     'O stock pode já não estar disponível, ou o pagamento falhou. O carrinho mantém-se.',
+  'checkout.pendingTitle': 'Pagamento ainda em processamento',
+  'checkout.pendingBody':
+    'O seu banco pode ainda estar a confirmar o pagamento. Verifique o email ou contacte o suporte com o número de seguimento.',
   'checkout.tryAgain': 'Voltar ao checkout',
   'account.title': 'Detalhes da conta',
   'account.username': 'Nome de utilizador',
@@ -208,6 +210,7 @@ const pt: TranslationDict = {
 
 const de: TranslationDict = {
   'nav.catalog': 'Katalog',
+  'nav.primary': 'Hauptnavigation',
   'nav.cart': 'Warenkorb',
   'nav.signIn': 'Anmelden',
   'nav.signOut': 'Abmelden',
@@ -267,9 +270,6 @@ const de: TranslationDict = {
   'checkout.total': 'Gesamt',
   'checkout.empty': 'Ihr Warenkorb ist leer.',
   'checkout.confirmed': 'Bestellung bestätigt',
-  'checkout.thankYou': 'Vielen Dank',
-  'checkout.thankYouBody':
-    'Ihre Bestellung wurde aufgegeben. Eine Bestätigung folgt per E-Mail.',
   'checkout.tracking': 'Sendungsnummer',
   'checkout.continue': 'Weiter einkaufen',
   'checkout.purchaseFailed': 'Kauf fehlgeschlagen. Melden Sie sich erneut an oder prüfen Sie die API.',
@@ -282,6 +282,9 @@ const de: TranslationDict = {
   'checkout.paymentFailedTitle': 'Zahlung konnte nicht abgeschlossen werden',
   'checkout.paymentFailedBody':
     'Der Bestand ist möglicherweise nicht mehr verfügbar, oder die Zahlung ist fehlgeschlagen. Der Warenkorb bleibt erhalten.',
+  'checkout.pendingTitle': 'Zahlung wird noch verarbeitet',
+  'checkout.pendingBody':
+    'Ihre Bank bestätigt die Zahlung möglicherweise noch. Prüfen Sie Ihre E-Mail oder wenden Sie sich mit der Sendungsnummer an den Support.',
   'checkout.tryAgain': 'Zurück zur Kasse',
   'account.title': 'Kontodetails',
   'account.username': 'Benutzername',
@@ -310,6 +313,7 @@ const de: TranslationDict = {
 
 const tr: TranslationDict = {
   'nav.catalog': 'Katalog',
+  'nav.primary': 'Ana gezinme',
   'nav.cart': 'Sepet',
   'nav.signIn': 'Giriş yap',
   'nav.signOut': 'Çıkış yap',
@@ -369,9 +373,6 @@ const tr: TranslationDict = {
   'checkout.total': 'Toplam',
   'checkout.empty': 'Sepetiniz boş.',
   'checkout.confirmed': 'Sipariş onaylandı',
-  'checkout.thankYou': 'Teşekkürler',
-  'checkout.thankYouBody':
-    'Siparişiniz alındı. Kısa süre içinde e-posta ile onay gelecektir.',
   'checkout.tracking': 'Takip numarası',
   'checkout.continue': 'Alışverişe devam et',
   'checkout.purchaseFailed': 'Satın alma başarısız. Yeniden giriş yapın veya API’yi kontrol edin.',
@@ -384,6 +385,9 @@ const tr: TranslationDict = {
   'checkout.paymentFailedTitle': 'Ödeme tamamlanamadı',
   'checkout.paymentFailedBody':
     'Stok kalmamış olabilir veya ödeme başarısız oldu. Sepetiniz aynı kaldı.',
+  'checkout.pendingTitle': 'Ödeme hâlâ işleniyor',
+  'checkout.pendingBody':
+    'Bankanız ödemeyi hâlâ onaylıyor olabilir. E-postanızı kontrol edin veya takip numaranızla destekle iletişime geçin.',
   'checkout.tryAgain': 'Ödemeye dön',
   'account.title': 'Hesap bilgileri',
   'account.username': 'Kullanıcı adı',

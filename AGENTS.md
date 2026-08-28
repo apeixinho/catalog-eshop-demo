@@ -21,3 +21,4 @@ Monorepo with an Angular SPA and three Spring Boot services. Standard run/build 
 
 ### Running the stack
 - See `README.md` Quick start (JVM) or Docker Compose. Do **not** run `compose.dev.yml` and `compose.staging.yml` at the same time — they share host ports `4200/8090/8091/9000`. Dev uses H2 + in-memory auth users; demo logins `user`/`password` and `admin`/`password`.
+- Branch promotion, GitHub Rulesets, and required CI checks: [docs/branching-and-ci.md](docs/branching-and-ci.md).

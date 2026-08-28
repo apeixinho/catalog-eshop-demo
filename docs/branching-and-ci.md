@@ -156,13 +156,13 @@ Checks
   …
 ```
 
-### Ruleset 2 — Pre-release (`staging`)
+### Ruleset 2 — Pre-Release (`staging`)
 
 **Goal:** MariaDB/nginx stack validated before integration promotes to staging.
 
 | Step | Screen / field | Value |
 |------|----------------|-------|
-| 1 | **Ruleset name** | `Pre-release (staging)` |
+| 1 | **Ruleset name** | `Pre-Release (staging)` |
 | 2 | **Target branches** | Include by pattern → `staging` |
 | 3 | **Require a pull request before merging** | Enabled (0 approvals, or 1 if you prefer) |
 | 4 | **Require status checks to pass** | Enabled |
@@ -174,7 +174,7 @@ Promotion PR **`dev` → `staging`** must show green **`Compose staging smoke`**
 
 ### Ruleset 3 — Release (`main`)
 
-**Goal:** same stack gate as staging; optional human review before release tip moves.
+**Goal:** same stack gate as staging; **one approving review** before the release tip moves (blocks merge until a reviewer approves).
 
 | Step | Screen / field | Value |
 |------|----------------|-------|

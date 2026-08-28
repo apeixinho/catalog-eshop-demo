@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -6,7 +7,15 @@ import { CartService } from '../cart/cart.service';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
 
-type ResultStatus = 'loading' | 'success' | 'cancelled' | 'failed';
+type ResultStatus = 'loading' | 'success' | 'cancelled' | 'failed' | 'pending';
+type RedirectHint = 'success' | 'cancelled' | 'failed';
+type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+
+const MAX_POLL_ATTEMPTS = 24;
+const INITIAL_DELAY_MS = 1000;
+const MAX_DELAY_MS = 3000;
+/** After this many polls, trust cancel/fail redirect hints if the API is still PENDING. */
+const HINT_TRUST_AFTER_POLLS = 3;
 
 @Component({
   selector: 'app-checkout-result-page',
@@ -34,6 +43,19 @@ type ResultStatus = 'loading' | 'success' | 'cancelled' | 'failed';
         <p class="lead">{{ i18n.t('checkout.paymentCancelledBody') }}</p>
         <a routerLink="/checkout" class="quiet-btn quiet-btn--outline">{{
           i18n.t('checkout.tryAgain')
+        }}</a>
+      } @else if (status() === 'pending') {
+        <p class="eyebrow">{{ i18n.t('checkout.verifying') }}</p>
+        <h1>{{ i18n.t('checkout.pendingTitle') }}</h1>
+        <p class="lead">{{ i18n.t('checkout.pendingBody') }}</p>
+        @if (tracking()) {
+          <div class="tracking">
+            <p class="eyebrow">{{ i18n.t('checkout.tracking') }}</p>
+            <p class="tracking-value">{{ tracking() }}</p>
+          </div>
+        }
+        <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{
+          i18n.t('checkout.continue')
         }}</a>
       } @else {
         <h1>{{ i18n.t('checkout.paymentFailedTitle') }}</h1>
@@ -115,40 +137,101 @@ export class CheckoutResultPage implements OnInit {
       return;
     }
 
+    const hint = parseRedirectHint(params.get('status'));
     this.tracking.set(tracking);
-    void this.resolveStatus(tracking);
+    void this.resolveStatus(tracking, hint);
   }
 
-  private async resolveStatus(tracking: string): Promise<void> {
+  private async resolveStatus(tracking: string, hint: RedirectHint | null): Promise<void> {
     const token = await this.auth.ensureValidAccessToken();
     if (!token) {
-      const returnUrl = `/checkout/result?tracking=${encodeURIComponent(tracking)}`;
-      void this.auth.login(returnUrl);
+      void this.auth.login(this.buildReturnUrl(tracking, hint));
       return;
     }
 
-    for (let attempt = 0; attempt < 6; attempt++) {
-      try {
-        const order = await firstValueFrom(this.api.getOrderStatus(tracking));
-        if (order.status === 'PAID') {
-          this.status.set('success');
-          this.cart.clearCart();
-          return;
-        }
-        if (order.status === 'CANCELLED') {
+    let delayMs = INITIAL_DELAY_MS;
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+      const apiStatus = await this.pollOrderStatus(tracking);
+      if (apiStatus === 'PAID') {
+        this.status.set('success');
+        this.cart.clearCart();
+        return;
+      }
+      if (apiStatus === 'CANCELLED') {
+        this.status.set('cancelled');
+        return;
+      }
+      if (apiStatus === 'PENDING') {
+        if (hint === 'cancelled' && attempt >= HINT_TRUST_AFTER_POLLS) {
           this.status.set('cancelled');
           return;
         }
-      } catch {
+        if (hint === 'failed' && attempt >= HINT_TRUST_AFTER_POLLS) {
+          this.status.set('failed');
+          return;
+        }
+      } else if (apiStatus === 'unauthorized') {
+        void this.auth.login(this.buildReturnUrl(tracking, hint));
+        return;
+      } else if (apiStatus === 'not_found') {
         this.status.set('failed');
         return;
       }
 
-      if (attempt < 5) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (attempt < MAX_POLL_ATTEMPTS - 1) {
+        await sleep(delayMs);
+        delayMs = Math.min(Math.round(delayMs * 1.25), MAX_DELAY_MS);
       }
     }
 
-    this.status.set('failed');
+    if (hint === 'success') {
+      this.status.set('pending');
+    } else if (hint === 'cancelled') {
+      this.status.set('cancelled');
+    } else {
+      this.status.set('failed');
+    }
   }
+
+  private async pollOrderStatus(
+    tracking: string,
+  ): Promise<OrderStatus | 'unauthorized' | 'not_found' | 'retry'> {
+    try {
+      const order = await firstValueFrom(this.api.getOrderStatus(tracking));
+      return order.status;
+    } catch (err) {
+      if (err instanceof HttpErrorResponse) {
+        if (err.status === 401 || err.status === 403) {
+          return 'unauthorized';
+        }
+        if (err.status === 404) {
+          return 'not_found';
+        }
+      }
+      return 'retry';
+    }
+  }
+
+  private buildReturnUrl(tracking: string, hint: RedirectHint | null): string {
+    const params = new URLSearchParams({ tracking });
+    if (hint) {
+      params.set('status', hint);
+    }
+    return `/checkout/result?${params.toString()}`;
+  }
+}
+
+function parseRedirectHint(raw: string | null): RedirectHint | null {
+  if (!raw) {
+    return null;
+  }
+  const value = raw.toLowerCase();
+  if (value === 'success' || value === 'cancelled' || value === 'failed') {
+    return value;
+  }
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
