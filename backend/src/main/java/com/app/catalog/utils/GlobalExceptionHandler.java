@@ -7,12 +7,12 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -28,7 +28,6 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import jakarta.annotation.Nullable;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 
@@ -40,9 +39,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // 400
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(final @NonNull MethodArgumentNotValidException ex,
-            final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
+            final MethodArgumentNotValidException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
         logger.info(ex.getClass().getName());
         //
         final List<String> errors = new ArrayList<String>();
@@ -57,9 +58,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleTypeMismatch(final @NonNull TypeMismatchException ex, final @NonNull HttpHeaders headers,
-            final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleTypeMismatch(
+            final TypeMismatchException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
         logger.info(ex.getClass().getName());
         //
         final String error = ex.getValue() + " value for " + ex.getPropertyName() + " should be of type "
@@ -69,10 +72,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleMissingServletRequestParameter(
-            final @NonNull MissingServletRequestParameterException ex,
-            final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleMissingServletRequestParameter(
+            final MissingServletRequestParameterException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
         logger.info(ex.getClass().getName());
         //
         final String error = ex.getParameterName() + " parameter is missing";
@@ -81,9 +85,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleMissingServletRequestPart(final @NonNull MissingServletRequestPartException ex,
-            final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleMissingServletRequestPart(
+            final MissingServletRequestPartException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
         logger.info(ex.getClass().getName());
         //
         final String error = ex.getRequestPartName() + " part is missing";
@@ -94,10 +100,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // 404
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleNoHandlerFoundException(final NoHandlerFoundException ex,
-            final @NonNull HttpHeaders headers,
-            final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleNoHandlerFoundException(
+            final NoHandlerFoundException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
         logger.info(ex.getClass().getName());
         //
         final String error = "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL();
@@ -108,11 +115,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // 405
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
-            final @NonNull HttpRequestMethodNotSupportedException ex,
-            final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status,
-            final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleHttpRequestMethodNotSupported(
+            final HttpRequestMethodNotSupportedException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
 
         logger.info(ex.getClass().getName());
 
@@ -128,9 +135,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // 415
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(final @NonNull HttpMediaTypeNotSupportedException ex,
-            final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleHttpMediaTypeNotSupported(
+            final HttpMediaTypeNotSupportedException ex,
+            final HttpHeaders headers,
+            final HttpStatusCode status,
+            final WebRequest request) {
         logger.info(ex.getClass().getName());
         //
         final StringBuilder builder = new StringBuilder();

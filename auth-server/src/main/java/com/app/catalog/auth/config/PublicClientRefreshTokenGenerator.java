@@ -3,7 +3,7 @@ package com.app.catalog.auth.config;
 import java.time.Instant;
 import java.util.Base64;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -21,9 +21,8 @@ final class PublicClientRefreshTokenGenerator implements OAuth2TokenGenerator<OA
     private final StringKeyGenerator refreshTokenGenerator =
         new Base64StringKeyGenerator(Base64.getUrlEncoder().withoutPadding(), 96);
 
-    @Nullable
     @Override
-    public OAuth2RefreshToken generate(OAuth2TokenContext context) {
+    public @Nullable OAuth2RefreshToken generate(OAuth2TokenContext context) {
         if (!OAuth2TokenType.REFRESH_TOKEN.equals(context.getTokenType())) {
             return null;
         }
