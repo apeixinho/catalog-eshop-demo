@@ -5,7 +5,7 @@ import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -23,9 +23,8 @@ import org.springframework.util.StringUtils;
  */
 final class PublicClientRefreshTokenAuthenticationConverter implements AuthenticationConverter {
 
-    @Nullable
     @Override
-    public Authentication convert(HttpServletRequest request) {
+    public @Nullable Authentication convert(HttpServletRequest request) {
         String grantType = request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
         if (!AuthorizationGrantType.REFRESH_TOKEN.getValue().equals(grantType)) {
             return null;
