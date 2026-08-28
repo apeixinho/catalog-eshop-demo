@@ -108,13 +108,17 @@ Path-filtered workflows (status badges at the top of this file):
 
 | When | What runs |
 |------|-----------|
+| PR or push to `dev` | Always `compose.dev.yml` smoke (H2) |
 | PR or push to `staging` / `main` | Always `compose.staging.yml` smoke (MariaDB + nginx) |
-| Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `deploy/**`, …) | `compose.staging.yml` smoke |
-| Same stack-file changes on/into `dev` | Also `compose.dev.yml` smoke (H2) |
+| Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `deploy/**`, …) | Also `compose.staging.yml` smoke on any branch |
 
 Smoke = `docker compose up --build --wait`, then curl actuator health, public products API, and the SPA root.
 
 Git branch `staging` is the promotion lane; Compose project `eshop-staging` is the MariaDB runtime profile — Stack CI maps **when** that stack is exercised, it does not host a long-lived environment.
+
+### Branch promotion
+
+See [Branching and CI](docs/branching-and-ci.md) for the `dev` → `staging` → `main` workflow, GitHub Rulesets, and Dependabot merge guidance.
 
 ## Docs
 
