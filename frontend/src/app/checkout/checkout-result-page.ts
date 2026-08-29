@@ -14,8 +14,6 @@ type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED';
 const MAX_POLL_ATTEMPTS = 24;
 const INITIAL_DELAY_MS = 1000;
 const MAX_DELAY_MS = 3000;
-/** After this many polls, trust cancel/fail redirect hints if the API is still PENDING. */
-const HINT_TRUST_AFTER_POLLS = 3;
 
 @Component({
   selector: 'app-checkout-result-page',
@@ -161,16 +159,7 @@ export class CheckoutResultPage implements OnInit {
         this.status.set('cancelled');
         return;
       }
-      if (apiStatus === 'PENDING') {
-        if (hint === 'cancelled' && attempt >= HINT_TRUST_AFTER_POLLS) {
-          this.status.set('cancelled');
-          return;
-        }
-        if (hint === 'failed' && attempt >= HINT_TRUST_AFTER_POLLS) {
-          this.status.set('failed');
-          return;
-        }
-      } else if (apiStatus === 'unauthorized') {
+      if (apiStatus === 'unauthorized') {
         void this.auth.login(this.buildReturnUrl(tracking, hint));
         return;
       } else if (apiStatus === 'not_found') {

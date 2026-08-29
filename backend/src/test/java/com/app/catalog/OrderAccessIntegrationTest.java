@@ -2,7 +2,6 @@ package com.app.catalog;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,10 +12,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.app.catalog.entity.Product;
 import com.app.catalog.payment.CreatePaymentSessionResponse;
 import com.app.catalog.payment.PaymentClient;
+import com.app.catalog.payment.CreatePaymentSessionResponse;
+import com.app.catalog.payment.PaymentClient;
 import com.app.catalog.repository.OrderRepository;
 import com.app.catalog.repository.ProductRepository;
+import com.app.catalog.support.JwtTestSupport;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -179,22 +180,18 @@ class OrderAccessIntegrationTest {
 
     /** JWT claims only — uses the app's {@code SecurityConfig#jwtGrantedAuthoritiesConverter}. */
     private RequestPostProcessor userJwt(String subject) {
-        return jwtWithClaims(j -> j.subject(subject).claim("scope", "catalog.write"));
+        return JwtTestSupport.catalogWriteJwt(jwtGrantedAuthoritiesConverter, subject);
     }
 
     private RequestPostProcessor managerJwt() {
-        return jwtWithClaims(j -> j.subject("manager-1")
-            .claim("scope", "catalog.write")
-            .claim("roles", List.of("USER", "MANAGER")));
+        return JwtTestSupport.managerJwt(jwtGrantedAuthoritiesConverter, "manager-1");
     }
 
     private RequestPostProcessor adminJwt() {
-        return jwtWithClaims(j -> j.subject("admin-1")
-            .claim("scope", "catalog.write")
-            .claim("roles", List.of("USER", "ADMIN")));
+        return JwtTestSupport.adminJwt(jwtGrantedAuthoritiesConverter, "admin-1");
     }
 
     private RequestPostProcessor jwtWithClaims(Consumer<Jwt.Builder> customizer) {
-        return jwt().jwt(customizer).authorities(jwtGrantedAuthoritiesConverter);
+        return JwtTestSupport.withClaims(jwtGrantedAuthoritiesConverter, customizer);
     }
 }

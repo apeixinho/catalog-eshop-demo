@@ -39,4 +39,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         WHERE p.id = :id AND p.active = true AND p.unitsInStock >= :qty
         """)
     int decrementStockIfAvailable(@Param("id") Long id, @Param("qty") int qty);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        UPDATE Product p
+        SET p.unitsInStock = p.unitsInStock + :qty, p.version = p.version + 1
+        WHERE p.id = :id AND p.active = true
+        """)
+    int incrementStock(@Param("id") Long id, @Param("qty") int qty);
 }

@@ -33,7 +33,8 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
     @Transactional(readOnly = true)
     public Page<CustomerSummaryResponse> listCustomers(Pageable pageable) {
         return customerRepository.findAll(pageable)
-            .map(OrderMapper::toCustomerSummary);
+            .map(customer -> OrderMapper.toCustomerSummary(
+                customer, orderRepository.countByCustomerId(customer.getId())));
     }
 
     @Override
@@ -58,7 +59,7 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
         Customer customer = new Customer();
         applyRequest(customer, request);
         Customer saved = customerRepository.save(customer);
-        return OrderMapper.toCustomerSummary(saved);
+        return OrderMapper.toCustomerSummary(saved, orderRepository.countByCustomerId(saved.getId()));
     }
 
     @Override
@@ -77,14 +78,14 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
             });
         applyRequest(customer, request);
         Customer saved = customerRepository.save(customer);
-        return OrderMapper.toCustomerSummary(saved);
+        return OrderMapper.toCustomerSummary(saved, orderRepository.countByCustomerId(saved.getId()));
     }
 
     @Override
     @Transactional
     public void deleteCustomer(Long id) {
         Customer customer = findCustomer(id);
-        if (!customer.getOrders().isEmpty()) {
+        if (orderRepository.countByCustomerId(customer.getId()) > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer has orders");
         }
         customerRepository.delete(customer);
