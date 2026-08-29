@@ -115,6 +115,8 @@ const en: TranslationDict = {
   'manage.orderCount': 'Orders',
   'manage.saveFailed': 'Save failed. Check the data and try again.',
   'manage.deleteFailed': 'Delete failed.',
+  'manage.confirmDeletePaid':
+    'Delete this paid order? Product stock will be restored before removal.',
   'auth.signingIn': 'Signing you in…',
   'auth.error.generic': 'Sign-in failed. Please try again.',
   'auth.error.access_denied': 'Sign-in was cancelled or denied.',
@@ -249,6 +251,8 @@ const pt: TranslationDict = {
   'manage.orderCount': 'Encomendas',
   'manage.saveFailed': 'Falha ao guardar. Verifique os dados e tente novamente.',
   'manage.deleteFailed': 'Falha ao eliminar.',
+  'manage.confirmDeletePaid':
+    'Eliminar esta encomenda paga? O stock será reposto antes da remoção.',
   'auth.signingIn': 'A iniciar sessão…',
   'auth.error.generic': 'Falha na autenticação. Tente novamente.',
   'auth.error.access_denied': 'Autenticação cancelada ou recusada.',
@@ -383,6 +387,8 @@ const de: TranslationDict = {
   'manage.orderCount': 'Bestellungen',
   'manage.saveFailed': 'Speichern fehlgeschlagen. Daten prüfen und erneut versuchen.',
   'manage.deleteFailed': 'Löschen fehlgeschlagen.',
+  'manage.confirmDeletePaid':
+    'Diese bezahlte Bestellung löschen? Der Lagerbestand wird vor dem Entfernen wiederhergestellt.',
   'auth.signingIn': 'Anmeldung läuft…',
   'auth.error.generic': 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
   'auth.error.access_denied': 'Anmeldung wurde abgebrochen oder verweigert.',
@@ -517,6 +523,8 @@ const tr: TranslationDict = {
   'manage.orderCount': 'Siparişler',
   'manage.saveFailed': 'Kaydetme başarısız. Verileri kontrol edip tekrar deneyin.',
   'manage.deleteFailed': 'Silme başarısız.',
+  'manage.confirmDeletePaid':
+    'Bu ödenmiş sipariş silinsin mi? Kaldırmadan önce stok geri yüklenecek.',
   'auth.signingIn': 'Giriş yapılıyor…',
   'auth.error.generic': 'Giriş başarısız. Lütfen tekrar deneyin.',
   'auth.error.access_denied': 'Giriş iptal edildi veya reddedildi.',

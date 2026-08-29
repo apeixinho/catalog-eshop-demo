@@ -24,6 +24,12 @@ The luv2shop reference backend has no Spring Security. We need an in-repo identi
 7. Access tokens include audience `catalog-api`; the resource server validates `jwt.audiences`.
 8. SPA keeps the access token in memory and renews via `refresh_token` stored in `sessionStorage` (no silent-renew iframe / `silent-renew.html`).
 
+## Order management rules
+
+- **Manual status updates** (`PUT /api/v1/manage/orders/{id}`): only `PENDING` → `CANCELLED` is permitted. Marking an order `PAID` manually returns **409 Conflict**; payment finalization must go through `POST /api/v1/checkout/payment-webhook`.
+- **Delete paid orders** (`DELETE /api/v1/manage/orders/{id}`): when status is `PAID`, product stock is restored for each line item before the order row is removed. If stock cannot be restored (e.g. product inactive), the delete fails with **409** and the order remains.
+- **Customer delete guard**: admin delete is rejected with **409** when the customer still has orders (counted via repository, not lazy-loaded collections).
+
 ## Consequences
 
 - Shoppers can browse and search without logging in; placing an order requires PKCE login + Bearer token.

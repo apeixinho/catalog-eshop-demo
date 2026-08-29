@@ -9,11 +9,13 @@ Spring Boot 4.1 OAuth2 resource server for Catalog E-Shop products API and check
 ## Access policy
 
 - Public GET: products, categories, countries, states, currency rates
-- JWT + `SCOPE_catalog.write`: `POST /api/v1/checkout/purchase` (and other shopper checkout paths)
+- JWT + `SCOPE_catalog.write`: shopper checkout and account order history (`/api/v1/checkout/**`, `/api/v1/account/orders/**`)
+- JWT + `ROLE_MANAGER` or `ROLE_ADMIN`: manage orders and read customers (`/api/v1/manage/**`)
+- JWT + `ROLE_ADMIN`: customer CRUD (`/api/v1/admin/customers/**`)
 - Shared secret (no JWT): `POST /api/v1/checkout/payment-webhook`
 - Validates issuer and audience (`OAUTH_AUDIENCE`, default `catalog-api`)
 
-Full decision record: [OAuth2 access policy](../docs/oauth2-access-policy.md).
+Manage orders: only `PENDING` → `CANCELLED` via API; deleting a `PAID` order restores stock first (409 if restore fails). See [OAuth2 access policy](../docs/oauth2-access-policy.md).
 
 ## Profiles
 

@@ -71,6 +71,7 @@ class CheckoutPaymentIntegrationTest {
     void restoreStock() {
         Product product = productRepository.findById(1L).orElseThrow();
         product.setUnitsInStock(100);
+        product.setActive(true);
         productRepository.saveAndFlush(product);
     }
 

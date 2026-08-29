@@ -253,6 +253,12 @@ export class ManageOrdersPage implements OnInit {
   }
 
   deleteOrder(order: OrderSummary): void {
+    if (
+      order.status === 'PAID' &&
+      !window.confirm(this.i18n.t('manage.confirmDeletePaid'))
+    ) {
+      return;
+    }
     this.busyId.set(order.id);
     this.api.deleteManageOrder(order.id).subscribe({
       next: () => {
@@ -273,6 +279,7 @@ export class ManageOrdersPage implements OnInit {
     this.api.listManageOrders().subscribe({
       next: (page) => {
         this.orders.set(page.content ?? []);
+        this.error.set(null);
         this.loading.set(false);
       },
       error: () => {

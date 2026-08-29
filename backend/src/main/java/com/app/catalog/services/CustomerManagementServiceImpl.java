@@ -15,6 +15,10 @@ import com.app.catalog.mapper.OrderMapper;
 import com.app.catalog.repository.CustomerRepository;
 import com.app.catalog.repository.OrderRepository;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class CustomerManagementServiceImpl implements CustomerManagementService {
 
@@ -32,9 +36,10 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
     @Override
     @Transactional(readOnly = true)
     public Page<CustomerSummaryResponse> listCustomers(Pageable pageable) {
-        return customerRepository.findAll(pageable)
-            .map(customer -> OrderMapper.toCustomerSummary(
-                customer, orderRepository.countByCustomerId(customer.getId())));
+        var page = customerRepository.findAll(pageable);
+        Map<Long, Long> orderCounts = orderCountsByCustomerId(page.getContent());
+        return page.map(customer -> OrderMapper.toCustomerSummary(
+            customer, orderCounts.getOrDefault(customer.getId(), 0L)));
     }
 
     @Override
@@ -118,5 +123,17 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
         customer.setLastName(request.lastName().trim());
         customer.setEmail(request.email().trim());
         customer.setOauthSub(request.oauthSub().trim());
+    }
+
+    private Map<Long, Long> orderCountsByCustomerId(List<Customer> customers) {
+        if (customers.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = customers.stream().map(Customer::getId).toList();
+        Map<Long, Long> counts = new HashMap<>();
+        for (Object[] row : orderRepository.countOrdersGroupedByCustomerId(ids)) {
+            counts.put((Long) row[0], (Long) row[1]);
+        }
+        return counts;
     }
 }
