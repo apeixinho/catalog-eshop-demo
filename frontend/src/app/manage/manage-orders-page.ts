@@ -1,13 +1,16 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { interval } from 'rxjs';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { OrderStatus, OrderSummary } from '../shared/models';
 
 @Component({
   selector: 'app-manage-orders-page',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, DecimalPipe, FormsModule],
   template: `
     <section class="page view-enter page-shell">
       <p class="eyebrow">{{ i18n.t('manage.title') }}</p>
@@ -37,15 +40,49 @@ import { OrderStatus, OrderSummary } from '../shared/models';
                   <td>{{ order.id }}</td>
                   <td class="mono">{{ order.orderTrackingNumber }}</td>
                   <td>
-                    <select
-                      [value]="order.status"
-                      (change)="onStatusChange(order, $any($event.target).value)"
-                      [disabled]="busyId() === order.id"
-                    >
-                      @for (status of statuses; track status) {
-                        <option [value]="status">{{ i18n.t('orders.status.' + status) }}</option>
-                      }
-                    </select>
+                    @if (editingStatusId() === order.id) {
+                      <div class="status-edit">
+                        <select
+                          [(ngModel)]="draftStatus"
+                          [disabled]="busyId() === order.id"
+                          [attr.aria-label]="i18n.t('orders.status')"
+                        >
+                          @for (status of editableStatuses; track status) {
+                            <option [ngValue]="status">{{
+                              i18n.t('orders.status.' + status)
+                            }}</option>
+                          }
+                        </select>
+                        <button
+                          type="button"
+                          class="quiet-btn"
+                          (click)="saveStatusEdit(order)"
+                          [disabled]="busyId() === order.id"
+                        >
+                          {{ i18n.t('manage.save') }}
+                        </button>
+                        <button
+                          type="button"
+                          class="quiet-btn quiet-btn--outline"
+                          (click)="cancelStatusEdit()"
+                          [disabled]="busyId() === order.id"
+                        >
+                          {{ i18n.t('manage.cancel') }}
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="status-view">
+                        <span>{{ i18n.t('orders.status.' + order.status) }}</span>
+                        <button
+                          type="button"
+                          class="quiet-btn quiet-btn--outline"
+                          (click)="startStatusEdit(order)"
+                          [disabled]="busyId() === order.id || order.status !== 'PENDING'"
+                        >
+                          {{ i18n.t('manage.changeStatus') }}
+                        </button>
+                      </div>
+                    }
                   </td>
                   <td>{{ order.totalPrice | number: '1.2-2' }} {{ order.currencyCode }}</td>
                   <td>
@@ -117,6 +154,14 @@ import { OrderStatus, OrderSummary } from '../shared/models';
       color: var(--muted);
     }
 
+    .status-view,
+    .status-edit {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     select {
       min-width: 8rem;
       padding: 0.35rem 0.5rem;
@@ -138,19 +183,58 @@ import { OrderStatus, OrderSummary } from '../shared/models';
 })
 export class ManageOrdersPage implements OnInit {
   private readonly api = inject(CatalogApiService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(LocaleService);
 
-  readonly statuses: OrderStatus[] = ['PENDING', 'PAID', 'CANCELLED'];
+  readonly editableStatuses: OrderStatus[] = ['PENDING', 'CANCELLED'];
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly orders = signal<OrderSummary[]>([]);
   readonly busyId = signal<number | null>(null);
+  readonly editingStatusId = signal<number | null>(null);
+  draftStatus: OrderStatus = 'PENDING';
 
   ngOnInit(): void {
     this.reload();
+    interval(15_000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.editingStatusId() === null && this.busyId() === null) {
+          this.reload(false);
+        }
+      });
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+      this.destroyRef.onDestroy(() =>
+        document.removeEventListener('visibilitychange', this.onVisibilityChange),
+      );
+    }
   }
 
-  onStatusChange(order: OrderSummary, status: OrderStatus): void {
+  private readonly onVisibilityChange = (): void => {
+    if (document.visibilityState === 'visible' && this.editingStatusId() === null && this.busyId() === null) {
+      this.reload(false);
+    }
+  };
+
+  startStatusEdit(order: OrderSummary): void {
+    this.editingStatusId.set(order.id);
+    this.draftStatus = order.status;
+  }
+
+  cancelStatusEdit(): void {
+    this.editingStatusId.set(null);
+  }
+
+  saveStatusEdit(order: OrderSummary): void {
+    if (this.draftStatus === order.status) {
+      this.cancelStatusEdit();
+      return;
+    }
+    this.updateOrderStatus(order, this.draftStatus);
+  }
+
+  private updateOrderStatus(order: OrderSummary, status: OrderStatus): void {
     this.busyId.set(order.id);
     this.api.updateManageOrder(order.id, status).subscribe({
       next: (updated) => {
@@ -158,6 +242,7 @@ export class ManageOrdersPage implements OnInit {
           rows.map((row) => (row.id === updated.id ? { ...row, status: updated.status } : row)),
         );
         this.busyId.set(null);
+        this.editingStatusId.set(null);
       },
       error: () => {
         this.error.set(this.i18n.t('manage.saveFailed'));
@@ -181,8 +266,10 @@ export class ManageOrdersPage implements OnInit {
     });
   }
 
-  private reload(): void {
-    this.loading.set(true);
+  private reload(showLoading = true): void {
+    if (showLoading) {
+      this.loading.set(true);
+    }
     this.api.listManageOrders().subscribe({
       next: (page) => {
         this.orders.set(page.content ?? []);

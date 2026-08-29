@@ -42,7 +42,8 @@ public class AccountOrderServiceImpl implements AccountOrderService {
         if (order.getCustomer() == null || !oauthSub.equals(order.getCustomer().getOauthSub())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown order");
         }
-        return OrderMapper.toDetail(order);
+        long orderCount = orderRepository.countByCustomerId(order.getCustomer().getId());
+        return OrderMapper.toDetail(order, orderCount);
     }
 
     private static void requireOauthSub(String oauthSub) {

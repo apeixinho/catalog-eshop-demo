@@ -1,9 +1,9 @@
 package com.app.catalog;
 
+import static com.app.catalog.support.JwtTestSupport.catalogWriteJwt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,11 +23,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.Collection;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,6 +64,9 @@ class CheckoutPaymentIntegrationTest {
     @MockitoBean
     private PaymentClient paymentClient;
 
+    @Autowired
+    private Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter;
+
     @BeforeEach
     void restoreStock() {
         Product product = productRepository.findById(1L).orElseThrow();
@@ -76,8 +84,7 @@ class CheckoutPaymentIntegrationTest {
                 "sess-pay-ok", "http://localhost:8091/checkout/sess-pay-ok"));
 
         MvcResult placed = mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-pay-ok").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-pay-ok"))
                 .header("Idempotency-Key", "pay-ok-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(PURCHASE_BODY.formatted("ada-pay@example.com")))
@@ -126,8 +133,7 @@ class CheckoutPaymentIntegrationTest {
                 "sess-pay-cancel", "http://localhost:8091/checkout/sess-pay-cancel"));
 
         MvcResult placed = mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-pay-cancel").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-pay-cancel"))
                 .header("Idempotency-Key", "pay-cancel-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(PURCHASE_BODY.formatted("ada-cancel@example.com")))
@@ -158,8 +164,7 @@ class CheckoutPaymentIntegrationTest {
                 "sess-pay-stock", "http://localhost:8091/checkout/sess-pay-stock"));
 
         MvcResult placed = mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-pay-stock").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-pay-stock"))
                 .header("Idempotency-Key", "pay-stock-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(PURCHASE_BODY.formatted("ada-stock@example.com")))
@@ -192,8 +197,7 @@ class CheckoutPaymentIntegrationTest {
                 "sess-status", "http://localhost:8091/checkout/sess-status"));
 
         MvcResult placed = mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-status").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-status"))
                 .header("Idempotency-Key", "status-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(PURCHASE_BODY.formatted("status@example.com")))
@@ -207,13 +211,11 @@ class CheckoutPaymentIntegrationTest {
             .andExpect(status().isUnauthorized());
 
         mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking)
-                .with(jwt().jwt(j -> j.subject("other-user").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write")))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "other-user")))
             .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking)
-                .with(jwt().jwt(j -> j.subject("user-status").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write")))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-status")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("PENDING"));
 
@@ -226,8 +228,7 @@ class CheckoutPaymentIntegrationTest {
             .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking)
-                .with(jwt().jwt(j -> j.subject("user-status").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write")))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-status")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("PAID"));
     }
