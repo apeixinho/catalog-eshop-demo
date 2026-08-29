@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
+import { roleGuard } from './auth/role.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'products' },
@@ -32,6 +33,23 @@ export const routes: Routes = [
     path: 'account',
     canActivate: [authGuard],
     loadComponent: () => import('./account/account-page').then((m) => m.AccountPage),
+  },
+  {
+    path: 'account/orders',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./account/account-orders-page').then((m) => m.AccountOrdersPage),
+  },
+  {
+    path: 'manage/orders',
+    canActivate: [authGuard, roleGuard(['MANAGER', 'ADMIN'])],
+    loadComponent: () => import('./manage/manage-orders-page').then((m) => m.ManageOrdersPage),
+  },
+  {
+    path: 'manage/customers',
+    canActivate: [authGuard, roleGuard(['MANAGER', 'ADMIN'])],
+    loadComponent: () =>
+      import('./manage/manage-customers-page').then((m) => m.ManageCustomersPage),
   },
   {
     path: 'auth/callback',

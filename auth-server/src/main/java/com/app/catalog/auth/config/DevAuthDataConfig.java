@@ -42,6 +42,11 @@ public class DevAuthDataConfig {
                 .roles("USER")
                 .build(),
             User.builder()
+                .username("manager")
+                .password(passwordEncoder.encode("password"))
+                .roles("USER", "MANAGER")
+                .build(),
+            User.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("password"))
                 .roles("USER", "ADMIN")

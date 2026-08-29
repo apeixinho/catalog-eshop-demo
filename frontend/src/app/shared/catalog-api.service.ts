@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Country, Page, Product, ProductCategory, State } from './models';
+import { Country, CustomerDetail, CustomerSummary, CustomerUpsert, OrderDetail, OrderStatus, OrderSummary, Page, Product, ProductCategory, State } from './models';
 import { environment } from '../../environments/environment';
 import { LocaleService } from '../i18n/locale.service';
 
@@ -81,10 +81,59 @@ export class CatalogApiService {
 
   getOrderStatus(
     trackingNumber: string,
-  ): Observable<{ orderTrackingNumber: string; status: 'PENDING' | 'PAID' | 'CANCELLED' }> {
-    return this.http.get<{ orderTrackingNumber: string; status: 'PENDING' | 'PAID' | 'CANCELLED' }>(
+  ): Observable<{ orderTrackingNumber: string; status: OrderStatus }> {
+    return this.http.get<{ orderTrackingNumber: string; status: OrderStatus }>(
       `${this.base}/checkout/orders/${encodeURIComponent(trackingNumber)}`,
     );
+  }
+
+  listMyOrders(page = 0, size = 20): Observable<Page<OrderSummary>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<OrderSummary>>(`${this.base}/account/orders`, { params });
+  }
+
+  getMyOrder(trackingNumber: string): Observable<OrderDetail> {
+    return this.http.get<OrderDetail>(
+      `${this.base}/account/orders/${encodeURIComponent(trackingNumber)}`,
+    );
+  }
+
+  listManageOrders(page = 0, size = 20): Observable<Page<OrderSummary>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<OrderSummary>>(`${this.base}/manage/orders`, { params });
+  }
+
+  getManageOrder(id: number): Observable<OrderDetail> {
+    return this.http.get<OrderDetail>(`${this.base}/manage/orders/${id}`);
+  }
+
+  updateManageOrder(id: number, status: OrderStatus): Observable<OrderDetail> {
+    return this.http.put<OrderDetail>(`${this.base}/manage/orders/${id}`, { status });
+  }
+
+  deleteManageOrder(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/manage/orders/${id}`);
+  }
+
+  listManageCustomers(page = 0, size = 20): Observable<Page<CustomerSummary>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<CustomerSummary>>(`${this.base}/manage/customers`, { params });
+  }
+
+  getManageCustomer(id: number): Observable<CustomerDetail> {
+    return this.http.get<CustomerDetail>(`${this.base}/manage/customers/${id}`);
+  }
+
+  createAdminCustomer(body: CustomerUpsert): Observable<CustomerSummary> {
+    return this.http.post<CustomerSummary>(`${this.base}/admin/customers`, body);
+  }
+
+  updateAdminCustomer(id: number, body: CustomerUpsert): Observable<CustomerSummary> {
+    return this.http.put<CustomerSummary>(`${this.base}/admin/customers/${id}`, body);
+  }
+
+  deleteAdminCustomer(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/admin/customers/${id}`);
   }
 
   private withLang(params: HttpParams): HttpParams {

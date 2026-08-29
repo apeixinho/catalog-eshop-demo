@@ -1,5 +1,10 @@
 package com.app.catalog.config;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +15,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -46,6 +52,9 @@ public class SecurityConfig {
                     "/api/v1/currency/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/checkout/payment-webhook").permitAll()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/manage/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/v1/account/**").hasAuthority("SCOPE_catalog.write")
                 .requestMatchers("/api/v1/checkout/**").hasAuthority("SCOPE_catalog.write")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
@@ -58,13 +67,33 @@ public class SecurityConfig {
 
     @Bean
     Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter());
+        return converter;
+    }
+
+    @Bean
+    Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter() {
         JwtGrantedAuthoritiesConverter scopes = new JwtGrantedAuthoritiesConverter();
         scopes.setAuthorityPrefix("SCOPE_");
         scopes.setAuthoritiesClaimName("scope");
 
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(scopes);
-        return converter;
+        JwtGrantedAuthoritiesConverter roles = new JwtGrantedAuthoritiesConverter();
+        roles.setAuthorityPrefix("ROLE_");
+        roles.setAuthoritiesClaimName("roles");
+
+        return jwt -> {
+            Set<GrantedAuthority> authorities = new LinkedHashSet<>();
+            Collection<GrantedAuthority> scopeAuthorities = scopes.convert(jwt);
+            if (scopeAuthorities != null) {
+                authorities.addAll(scopeAuthorities);
+            }
+            Collection<GrantedAuthority> roleAuthorities = roles.convert(jwt);
+            if (roleAuthorities != null) {
+                authorities.addAll(roleAuthorities);
+            }
+            return new ArrayList<>(authorities);
+        };
     }
 
     @Bean
