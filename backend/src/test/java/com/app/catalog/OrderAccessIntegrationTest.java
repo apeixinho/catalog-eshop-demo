@@ -12,8 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.app.catalog.entity.Product;
 import com.app.catalog.payment.CreatePaymentSessionResponse;
 import com.app.catalog.payment.PaymentClient;
-import com.app.catalog.payment.CreatePaymentSessionResponse;
-import com.app.catalog.payment.PaymentClient;
 import com.app.catalog.repository.OrderRepository;
 import com.app.catalog.repository.ProductRepository;
 import com.app.catalog.support.JwtTestSupport;
@@ -60,6 +58,7 @@ class OrderAccessIntegrationTest {
     void placeOrderForUser() throws Exception {
         Product product = productRepository.findById(1L).orElseThrow();
         product.setUnitsInStock(100);
+        product.setActive(true);
         productRepository.saveAndFlush(product);
 
         when(paymentClient.createSession(any()))

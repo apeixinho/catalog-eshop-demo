@@ -173,13 +173,7 @@ export class CheckoutResultPage implements OnInit {
       }
     }
 
-    if (hint === 'success') {
-      this.status.set('pending');
-    } else if (hint === 'cancelled') {
-      this.status.set('cancelled');
-    } else {
-      this.status.set('failed');
-    }
+    this.status.set('pending');
   }
 
   private async pollOrderStatus(

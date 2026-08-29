@@ -56,11 +56,13 @@ class ManageOrderIntegrationTest {
 
     private String trackingNumber;
     private Long orderId;
+    private String paymentSessionId;
 
     @BeforeEach
     void placePendingOrder() throws Exception {
         Product product = productRepository.findById(1L).orElseThrow();
         product.setUnitsInStock(100);
+        product.setActive(true);
         productRepository.saveAndFlush(product);
 
         String sessionId = "sess-manage-order-" + System.nanoTime();
@@ -92,7 +94,16 @@ class ManageOrderIntegrationTest {
         paymentSessionId = orderRepository.findById(orderId).orElseThrow().getPaymentSessionId();
     }
 
-    private String paymentSessionId;
+    @Test
+    void managerCannotCancelPaidOrder() throws Exception {
+        payOrder();
+
+        mockMvc.perform(put("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"CANCELLED\"}"))
+            .andExpect(status().isConflict());
+    }
 
     @Test
     void managerCanCancelPendingOrder() throws Exception {
@@ -117,13 +128,7 @@ class ManageOrderIntegrationTest {
     void deletePaidOrderRestoresStock() throws Exception {
         int stockBefore = productRepository.findById(1L).orElseThrow().getUnitsInStock();
 
-        mockMvc.perform(post("/api/v1/checkout/payment-webhook")
-                .header("X-Payment-Secret", "dev-payment-secret")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {"sessionId":"%s","status":"SUCCEEDED","orderTrackingNumber":"%s"}
-                    """.formatted(paymentSessionId, trackingNumber)))
-            .andExpect(status().isOk());
+        payOrder();
 
         assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
             .isEqualTo(stockBefore - 2);
@@ -137,5 +142,33 @@ class ManageOrderIntegrationTest {
         assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
             .isEqualTo(stockBefore);
         assertThat(orderRepository.findById(orderId)).isEmpty();
+    }
+
+    @Test
+    void deletePaidOrderFailsWhenProductInactive() throws Exception {
+        payOrder();
+        int stockAfterPayment = productRepository.findById(1L).orElseThrow().getUnitsInStock();
+
+        Product product = productRepository.findById(1L).orElseThrow();
+        product.setActive(false);
+        productRepository.saveAndFlush(product);
+
+        mockMvc.perform(delete("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+            .andExpect(status().isConflict());
+
+        assertThat(orderRepository.findById(orderId)).isPresent();
+        assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
+            .isEqualTo(stockAfterPayment);
+    }
+
+    private void payOrder() throws Exception {
+        mockMvc.perform(post("/api/v1/checkout/payment-webhook")
+                .header("X-Payment-Secret", "dev-payment-secret")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"sessionId":"%s","status":"SUCCEEDED","orderTrackingNumber":"%s"}
+                    """.formatted(paymentSessionId, trackingNumber)))
+            .andExpect(status().isOk());
     }
 }

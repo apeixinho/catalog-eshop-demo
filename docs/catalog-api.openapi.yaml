@@ -203,6 +203,219 @@ paths:
           description: Missing or invalid payment secret
         '409':
           description: Insufficient stock on SUCCEEDED (order CANCELLED)
+  /api/v1/account/orders:
+    get:
+      summary: List authenticated shopper orders (newest first)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of order summaries
+        '401':
+          description: Missing or invalid JWT
+  /api/v1/account/orders/{id}:
+    get:
+      summary: Order detail for the authenticated owner
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Order detail
+        '401':
+          description: Missing or invalid JWT
+        '404':
+          description: Unknown order or not owned by caller
+  /api/v1/manage/orders:
+    get:
+      summary: List all orders (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of order summaries
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+  /api/v1/manage/orders/{id}:
+    get:
+      summary: Order detail (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Order detail
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown order
+    put:
+      summary: Update order status (manual cancel only)
+      description: >
+        Only PENDING → CANCELLED is allowed. PAID must come from the payment webhook;
+        other transitions return 409 Conflict.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+      responses:
+        '200':
+          description: Updated order detail
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown order
+        '409':
+          description: Invalid status transition
+    delete:
+      summary: Delete order (restores stock when PAID)
+      description: >
+        Deleting a PAID order restores product stock before removal. Returns 409 if stock
+        cannot be restored (e.g. product inactive).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Order deleted
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown order
+        '409':
+          description: Could not restore stock for a line item
+  /api/v1/manage/customers:
+    get:
+      summary: List customers (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of customer summaries
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+  /api/v1/manage/customers/{id}:
+    get:
+      summary: Customer detail with order history (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Customer detail
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown customer
+  /api/v1/admin/customers:
+    post:
+      summary: Create customer (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Created customer summary
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_ADMIN
+  /api/v1/admin/customers/{id}:
+    put:
+      summary: Update customer (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Updated customer summary
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_ADMIN
+        '404':
+          description: Unknown customer
+    delete:
+      summary: Delete customer without orders (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Customer deleted
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_ADMIN
+        '404':
+          description: Unknown customer
+        '409':
+          description: Customer has orders
 components:
   securitySchemes:
     bearerAuth:
@@ -273,3 +486,10 @@ components:
           type: string
           enum: [SUCCEEDED, CANCELLED, FAILED]
         orderTrackingNumber: { type: string }
+    UpdateOrderRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
