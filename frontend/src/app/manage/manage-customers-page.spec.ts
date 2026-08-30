@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { ManageCustomersPage } from './manage-customers-page';
@@ -18,6 +20,8 @@ describe('ManageCustomersPage', () => {
     updateAdminCustomer: ReturnType<typeof vi.fn>;
     deleteAdminCustomer: ReturnType<typeof vi.fn>;
   };
+
+  let dialog: { open: ReturnType<typeof vi.fn> };
 
   const sample: CustomerSummary = {
     id: 5,
@@ -43,14 +47,21 @@ describe('ManageCustomersPage', () => {
       deleteAdminCustomer: vi.fn().mockReturnValue(of(void 0)),
     };
 
+    dialog = {
+      open: vi.fn().mockReturnValue({ afterClosed: () => of(true) }),
+    };
+
     await TestBed.configureTestingModule({
       imports: [ManageCustomersPage],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: AuthService, useValue: auth },
         { provide: CatalogApiService, useValue: api },
       ],
-    }).compileComponents();
+    })
+      .overrideProvider(MatDialog, { useValue: dialog })
+      .compileComponents();
 
     fixture = TestBed.createComponent(ManageCustomersPage);
     component = fixture.componentInstance;

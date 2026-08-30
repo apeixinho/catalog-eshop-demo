@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { ManageOrdersPage } from './manage-orders-page';
@@ -14,6 +16,7 @@ describe('ManageOrdersPage', () => {
     updateManageOrder: ReturnType<typeof vi.fn>;
     deleteManageOrder: ReturnType<typeof vi.fn>;
   };
+  let dialog: { open: ReturnType<typeof vi.fn> };
 
   const sampleOrder: OrderSummary = {
     id: 42,
@@ -27,20 +30,24 @@ describe('ManageOrdersPage', () => {
 
   beforeEach(async () => {
     api = {
-      listManageOrders: vi
-        .fn()
-        .mockReturnValue(of({ content: [sampleOrder] })),
+      listManageOrders: vi.fn().mockReturnValue(of({ content: [sampleOrder] })),
       updateManageOrder: vi.fn(),
       deleteManageOrder: vi.fn(),
+    };
+    dialog = {
+      open: vi.fn().mockReturnValue({ afterClosed: () => of(true) }),
     };
 
     await TestBed.configureTestingModule({
       imports: [ManageOrdersPage],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: CatalogApiService, useValue: api },
       ],
-    }).compileComponents();
+    })
+      .overrideProvider(MatDialog, { useValue: dialog })
+      .compileComponents();
 
     fixture = TestBed.createComponent(ManageOrdersPage);
     component = fixture.componentInstance;
@@ -55,9 +62,7 @@ describe('ManageOrdersPage', () => {
 
   it('clears error after successful status save', () => {
     component.error.set('Previous error');
-    api.updateManageOrder.mockReturnValue(
-      of({ ...sampleOrder, status: 'CANCELLED' }),
-    );
+    api.updateManageOrder.mockReturnValue(of({ ...sampleOrder, status: 'CANCELLED' }));
 
     component.startStatusEdit(sampleOrder);
     component.draftStatus = 'CANCELLED';
@@ -74,9 +79,8 @@ describe('ManageOrdersPage', () => {
     api.deleteManageOrder.mockReturnValue(of(void 0));
 
     component.deleteOrder(paidOrder);
-    expect(component.confirmDeleteOrder()?.id).toBe(99);
 
-    component.performDelete(paidOrder);
+    expect(dialog.open).toHaveBeenCalled();
     expect(api.deleteManageOrder).toHaveBeenCalledWith(99);
     expect(component.orders()).toHaveLength(0);
   });
@@ -93,12 +97,13 @@ describe('ManageOrdersPage', () => {
     expect(api.listManageOrders.mock.calls.length).toBeGreaterThan(listCallsAfterInit);
   });
 
-  it('deletes pending order immediately without confirm dialog', () => {
+  it('deletes non-paid order immediately without dialog', () => {
+    const cancelledOrder: OrderSummary = { ...sampleOrder, status: 'CANCELLED' };
     api.deleteManageOrder.mockReturnValue(of(void 0));
 
-    component.deleteOrder(sampleOrder);
+    component.deleteOrder(cancelledOrder);
 
-    expect(component.confirmDeleteOrder()).toBeNull();
+    expect(dialog.open).not.toHaveBeenCalled();
     expect(api.deleteManageOrder).toHaveBeenCalledWith(42);
   });
 

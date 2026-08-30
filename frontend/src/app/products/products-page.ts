@@ -2,6 +2,13 @@ import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { Page, Product, ProductCategory } from '../shared/models';
 import { CartService } from '../cart/cart.service';
@@ -11,47 +18,54 @@ const PAGE_SIZE = 8;
 
 @Component({
   selector: 'app-products-page',
-  imports: [CurrencyPipe, FormsModule, RouterLink],
+  imports: [
+    CurrencyPipe,
+    FormsModule,
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatTooltipModule,
+    MatPaginatorModule,
+  ],
   template: `
     <div class="catalog view-enter">
       <section class="filters page-shell">
         <div class="filter-row">
-          <label class="search">
-            <span class="sr-only">{{ i18n.t('catalog.search') }}</span>
+          <mat-form-field class="search" subscriptSizing="dynamic">
+            <mat-label>{{ i18n.t('catalog.search') }}</mat-label>
             <input
-              class="gallery-input"
+              matInput
               type="search"
               [(ngModel)]="search"
               (ngModelChange)="onSearchInput()"
               (keydown.enter)="onSearch()"
               [placeholder]="i18n.t('catalog.searchPlaceholder')"
             />
-          </label>
-          <label class="category">
-            <span class="sr-only">{{ i18n.t('catalog.category') }}</span>
-            <select
-              class="gallery-select"
-              [(ngModel)]="categoryId"
-              (ngModelChange)="onCategoryChange()"
-            >
-              <option [ngValue]="null">{{ i18n.t('catalog.allCategories') }}</option>
+          </mat-form-field>
+          <mat-form-field class="category" subscriptSizing="dynamic">
+            <mat-label>{{ i18n.t('catalog.category') }}</mat-label>
+            <mat-select [(ngModel)]="categoryId" (ngModelChange)="onCategoryChange()">
+              <mat-option [value]="null">{{ i18n.t('catalog.allCategories') }}</mat-option>
               @for (category of categories(); track category.id) {
-                <option [ngValue]="category.id">{{ category.categoryName }}</option>
+                <mat-option [value]="category.id">{{ category.categoryName }}</mat-option>
               }
-            </select>
-          </label>
+            </mat-select>
+          </mat-form-field>
         </div>
       </section>
 
       <section class="grid-wrap page-shell">
         @if (error()) {
-          <p class="empty">{{ error() }}</p>
+          <p class="empty muted">{{ error() }}</p>
         } @else if (products().length === 0) {
-          <p class="empty">{{ i18n.t('catalog.empty') }}</p>
+          <p class="empty muted">{{ i18n.t('catalog.empty') }}</p>
         } @else {
           <div class="grid">
-            @for (product of products(); track product.id; let i = $index) {
-              <article class="product animate-fade-up" [style.animation-delay.ms]="i * 70">
+            @for (product of products(); track product.id) {
+              <mat-card class="product">
                 <a
                   class="product-image-link"
                   [routerLink]="['/products', product.id]"
@@ -59,27 +73,23 @@ const PAGE_SIZE = 8;
                 >
                   <div class="product-image-wrap frame">
                     <img
-                      class="animate-fade-in"
                       [src]="imageSrc(product.imageUrl)"
                       [alt]="product.name"
                       loading="lazy"
                     />
                   </div>
                 </a>
-                <div class="meta">
+                <mat-card-content class="meta">
                   <h2>
                     <a class="title-link" [routerLink]="['/products', product.id]">{{
                       product.name
                     }}</a>
                   </h2>
                   @if (product.description) {
-                    <div class="desc-wrap">
-                      <p class="desc">{{ product.description }}</p>
-                      <span class="desc-tooltip" role="tooltip">{{ product.description }}</span>
-                    </div>
+                    <p class="desc muted" [matTooltip]="product.description">{{ product.description }}</p>
                   }
                   <div class="row">
-                    <span class="price">{{
+                    <span class="price mono">{{
                       i18n.toDisplayMoney(product.unitPrice)
                         | currency
                           : i18n.currencyCode()
@@ -87,39 +97,24 @@ const PAGE_SIZE = 8;
                           : '1.2-2'
                           : i18n.localeId()
                     }}</span>
-                    <button class="quiet-btn add" type="button" (click)="add(product)">
+                    <button mat-button type="button" (click)="add(product)">
                       {{ i18n.t('catalog.addToCart') }}
                     </button>
                   </div>
-                </div>
-              </article>
+                </mat-card-content>
+              </mat-card>
             }
           </div>
 
-          @if (totalPages() > 1) {
-            <nav class="pagination" [attr.aria-label]="i18n.t('catalog.pages')">
-              <button
-                type="button"
-                class="quiet-btn page-btn"
-                [disabled]="pageIndex() === 0"
-                (click)="goToPage(pageIndex() - 1)"
-              >
-                {{ i18n.t('catalog.previous') }}
-              </button>
-              <span class="page-status">
-                <span class="mono">{{ pageIndex() + 1 }}</span>
-                <span class="of">/</span>
-                <span class="mono">{{ totalPages() }}</span>
-              </span>
-              <button
-                type="button"
-                class="quiet-btn page-btn"
-                [disabled]="pageIndex() >= totalPages() - 1"
-                (click)="goToPage(pageIndex() + 1)"
-              >
-                {{ i18n.t('catalog.next') }}
-              </button>
-            </nav>
+          @if (totalElements() > PAGE_SIZE) {
+            <mat-paginator
+              [length]="totalElements()"
+              [pageIndex]="pageIndex()"
+              [pageSize]="PAGE_SIZE"
+              [hidePageSize]="true"
+              [attr.aria-label]="i18n.t('catalog.pages')"
+              (page)="onPage($event)"
+            />
           }
         }
       </section>
@@ -129,22 +124,22 @@ const PAGE_SIZE = 8;
     .filter-row {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      border-bottom: 0;
+      gap: 0.5rem;
       padding-block: 1.5rem;
     }
 
     @media (min-width: 640px) {
       .filter-row {
         flex-direction: row;
-        align-items: flex-end;
-        gap: 2rem;
+        align-items: flex-start;
+        gap: 1rem;
         padding-block: 2rem;
       }
     }
 
     .search {
       flex: 1;
+      width: 100%;
     }
 
     .category {
@@ -153,42 +148,30 @@ const PAGE_SIZE = 8;
 
     @media (min-width: 640px) {
       .category {
-        width: 12rem;
+        width: 14rem;
       }
     }
 
     .grid-wrap {
       padding-bottom: 5rem;
-      padding-top: 2rem;
-    }
-
-    @media (min-width: 640px) {
-      .grid-wrap {
-        padding-bottom: 7rem;
-        padding-top: 2.5rem;
-      }
+      padding-top: 1rem;
     }
 
     .empty {
       margin: 4rem 0;
       text-align: center;
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      color: var(--muted);
+      font: var(--mat-sys-headline-small);
     }
 
     .grid {
       display: grid;
       grid-template-columns: 1fr;
-      column-gap: 2rem;
-      row-gap: 3.5rem;
-      align-items: stretch;
+      gap: 1.5rem;
     }
 
     @media (min-width: 640px) {
       .grid {
         grid-template-columns: repeat(2, 1fr);
-        row-gap: 4rem;
       }
     }
 
@@ -214,59 +197,27 @@ const PAGE_SIZE = 8;
       display: block;
       text-decoration: none;
       color: inherit;
-      margin-bottom: 1.25rem;
-      outline: none;
-    }
-
-    .product-image-link:focus-visible .frame {
-      outline: 2px solid var(--accent);
-      outline-offset: 3px;
     }
 
     .frame {
       aspect-ratio: 3 / 4;
-      background: var(--surface);
-      overflow: hidden;
-      transition: transform 0.35s ease;
-    }
-
-    .product-image-link:hover .frame,
-    .product-image-link:focus-visible .frame {
-      transform: scale(1.02);
-    }
-
-    .frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: opacity 0.35s ease;
-    }
-
-    .product-image-link:hover img,
-    .product-image-link:focus-visible img {
-      opacity: 0.92;
+      background: var(--mat-sys-surface-container);
     }
 
     .meta {
       display: flex;
       flex-direction: column;
       flex: 1;
-      min-height: 0;
+      padding-top: 1rem !important;
     }
 
     .meta h2 {
       margin: 0;
-      font-family: var(--font-display);
-      font-size: 1.25rem;
-      font-weight: 500;
-      line-height: 1.25;
-      letter-spacing: -0.02em;
+      font: var(--mat-sys-title-medium);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: calc(1.25em * 2);
     }
 
     .title-link {
@@ -274,63 +225,17 @@ const PAGE_SIZE = 8;
       text-decoration: none;
     }
 
-    .title-link:hover,
-    .title-link:focus-visible {
-      text-decoration: underline;
-      text-underline-offset: 0.2em;
-    }
-
-    @media (min-width: 640px) {
-      .meta h2 {
-        font-size: 1.5rem;
-        min-height: calc(1.25em * 2);
-      }
-    }
-
-    .desc-wrap {
-      position: relative;
-      margin-top: 0.35rem;
+    .title-link:hover {
+      color: var(--mat-sys-primary);
     }
 
     .desc {
-      margin: 0;
-      font-size: 0.875rem;
-      line-height: 1.4;
-      color: var(--muted);
+      margin: 0.35rem 0 0;
+      font: var(--mat-sys-body-small);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      cursor: help;
-    }
-
-    .desc-tooltip {
-      position: absolute;
-      left: 0;
-      bottom: calc(100% + 0.5rem);
-      z-index: 5;
-      width: max(100%, 14rem);
-      max-width: 20rem;
-      padding: 0.65rem 0.75rem;
-      background: var(--fg);
-      color: var(--bg);
-      font-size: 0.8rem;
-      line-height: 1.45;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(4px);
-      transition:
-        opacity 0.2s ease,
-        transform 0.2s ease,
-        visibility 0.2s ease;
-      pointer-events: none;
-    }
-
-    .desc-wrap:hover .desc-tooltip,
-    .desc-wrap:focus-within .desc-tooltip {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
     }
 
     .row {
@@ -342,54 +247,14 @@ const PAGE_SIZE = 8;
       padding-top: 0.75rem;
     }
 
-    .price {
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
-    }
-
-    .add {
-      border-bottom: 1px solid transparent;
-      padding-bottom: 0.125rem;
-    }
-
-    .add:hover {
-      border-bottom-color: var(--accent);
-    }
-
-    .pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1.5rem;
-      margin-top: 3.5rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .page-btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-
-    .page-status {
-      display: flex;
-      align-items: baseline;
-      gap: 0.35rem;
-      font-size: 0.875rem;
-      color: var(--muted);
-    }
-
-    .mono {
-      font-family: var(--font-mono);
-      color: var(--fg);
-    }
-
-    .of {
-      opacity: 0.6;
+    mat-paginator {
+      margin-top: 2rem;
     }
   `,
 })
 export class ProductsPage {
+  readonly PAGE_SIZE = PAGE_SIZE;
+
   private readonly api = inject(CatalogApiService);
   private readonly cart = inject(CartService);
   readonly i18n = inject(LocaleService);
@@ -404,7 +269,6 @@ export class ProductsPage {
   search = '';
   categoryId: number | null = null;
   private searchDebounce: ReturnType<typeof setTimeout> | null = null;
-  /** Bumped so slower responses cannot overwrite a newer catalog load. */
   private loadSeq = 0;
 
   constructor() {
@@ -444,11 +308,8 @@ export class ProductsPage {
     this.load();
   }
 
-  goToPage(page: number): void {
-    if (page < 0 || page >= this.totalPages()) {
-      return;
-    }
-    this.pageIndex.set(page);
+  onPage(event: PageEvent): void {
+    this.pageIndex.set(event.pageIndex);
     this.load();
   }
 

@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PageEvent } from '@angular/material/paginator';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -59,6 +61,7 @@ describe('ProductsPage', () => {
       imports: [ProductsPage],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: CatalogApiService, useValue: api },
         { provide: CartService, useValue: cart },
         { provide: LocaleService, useValue: localeMock },
@@ -96,16 +99,20 @@ describe('ProductsPage', () => {
     expect(api.getProducts).not.toHaveBeenCalled();
   });
 
-  it('ignores out-of-range pagination', () => {
-    component.totalPages.set(2);
-    component.pageIndex.set(0);
+  it('changes page via paginator event', () => {
+    api.getProducts.mockReturnValue(
+      of({
+        content: [sampleProduct],
+        number: 1,
+        totalPages: 2,
+        totalElements: 10,
+      }),
+    );
     api.getProducts.mockClear();
+    component.onPage({ pageIndex: 1, pageSize: 8, length: 10 } as PageEvent);
 
-    component.goToPage(-1);
-    component.goToPage(99);
-
-    expect(api.getProducts).not.toHaveBeenCalled();
-    expect(component.pageIndex()).toBe(0);
+    expect(component.pageIndex()).toBe(1);
+    expect(api.getProducts).toHaveBeenCalledWith(1, 8);
   });
 
   it('sets error when catalog load fails', () => {

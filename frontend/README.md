@@ -30,6 +30,21 @@ Open http://localhost:4200. Defaults talk to API `http://localhost:8090` and aut
 
 See [OAuth2 access policy](../docs/oauth2-access-policy.md).
 
+## UI (Angular Material)
+
+The storefront uses [Angular Material 22](https://material.angular.dev/) (M3) with dual themes:
+
+| App theme | Material prebuilt equivalent |
+|-----------|------------------------------|
+| `default` | azure-blue (light) |
+| `alternative` | rose-red (light) |
+
+Themes are applied via Sass (`src/styles.scss`) and toggled on `html` through `ThemeService` (`mat-theme-default` / `mat-theme-alternative`). FOUC is avoided by `public/theme-boot.js`.
+
+Notifications use `MatSnackBar`; tables use `MatTable`; forms use `MatFormField` / `MatInput` / `MatSelect`.
+
+Component tests use [Material harnesses](https://material.angular.dev/guide/using-component-harnesses) via `src/app/testing/material-harness-support.ts`. Specs that render Material components should include `provideNoopAnimations()`.
+
 ## Test
 
 ```bash

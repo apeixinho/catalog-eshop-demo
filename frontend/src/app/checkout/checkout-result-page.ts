@@ -1,6 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { CartService } from '../cart/cart.service';
@@ -16,104 +19,106 @@ const MAX_DELAY_MS = 3000;
 
 @Component({
   selector: 'app-checkout-result-page',
-  imports: [RouterLink],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
   template: `
     <section class="result view-enter page-shell">
-      @if (status() === 'loading') {
-        <p class="eyebrow">{{ i18n.t('checkout.verifying') }}</p>
-        <h1>{{ i18n.t('checkout.placingOrder') }}</h1>
-      } @else if (status() === 'success') {
-        <p class="eyebrow">{{ i18n.t('checkout.confirmed') }}</p>
-        <h1>{{ i18n.t('checkout.paidTitle') }}</h1>
-        <p class="lead">{{ i18n.t('checkout.paidBody') }}</p>
-        @if (tracking()) {
-          <div class="tracking">
-            <p class="eyebrow">{{ i18n.t('checkout.tracking') }}</p>
-            <p class="tracking-value">{{ tracking() }}</p>
-          </div>
-        }
-        <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{
-          i18n.t('checkout.continue')
-        }}</a>
-      } @else if (status() === 'cancelled') {
-        <h1>{{ i18n.t('checkout.paymentCancelledTitle') }}</h1>
-        <p class="lead">{{ i18n.t('checkout.paymentCancelledBody') }}</p>
-        <a routerLink="/checkout" class="quiet-btn quiet-btn--outline">{{
-          i18n.t('checkout.tryAgain')
-        }}</a>
-      } @else if (status() === 'pending') {
-        <p class="eyebrow">{{ i18n.t('checkout.verifying') }}</p>
-        <h1>{{ i18n.t('checkout.pendingTitle') }}</h1>
-        <p class="lead">{{ i18n.t('checkout.pendingBody') }}</p>
-        @if (tracking()) {
-          <div class="tracking">
-            <p class="eyebrow">{{ i18n.t('checkout.tracking') }}</p>
-            <p class="tracking-value">{{ tracking() }}</p>
-          </div>
-        }
-        <div class="actions">
-          <button
-            type="button"
-            class="quiet-btn"
-            (click)="checkAgain()"
-            [disabled]="rechecking()"
-          >
-            {{ i18n.t('checkout.checkAgain') }}
-          </button>
-          <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{
-            i18n.t('checkout.continue')
-          }}</a>
-        </div>
-      } @else {
-        <h1>{{ i18n.t('checkout.paymentFailedTitle') }}</h1>
-        <p class="lead">{{ i18n.t('checkout.paymentFailedBody') }}</p>
-        <a routerLink="/checkout" class="quiet-btn quiet-btn--outline">{{
-          i18n.t('checkout.tryAgain')
-        }}</a>
-      }
+      <mat-card>
+        <mat-card-content>
+          @if (status() === 'loading') {
+            <div class="state">
+              <mat-spinner diameter="48" />
+              <p class="eyebrow">{{ i18n.t('checkout.verifying') }}</p>
+              <h1>{{ i18n.t('checkout.placingOrder') }}</h1>
+            </div>
+          } @else if (status() === 'success') {
+            <p class="eyebrow">{{ i18n.t('checkout.confirmed') }}</p>
+            <h1>{{ i18n.t('checkout.paidTitle') }}</h1>
+            <p class="lead muted">{{ i18n.t('checkout.paidBody') }}</p>
+            @if (tracking()) {
+              <div class="tracking">
+                <p class="eyebrow">{{ i18n.t('checkout.tracking') }}</p>
+                <p class="tracking-value mono">{{ tracking() }}</p>
+              </div>
+            }
+            <a mat-stroked-button routerLink="/products">{{ i18n.t('checkout.continue') }}</a>
+          } @else if (status() === 'cancelled') {
+            <h1>{{ i18n.t('checkout.paymentCancelledTitle') }}</h1>
+            <p class="lead muted">{{ i18n.t('checkout.paymentCancelledBody') }}</p>
+            <a mat-stroked-button routerLink="/checkout">{{ i18n.t('checkout.tryAgain') }}</a>
+          } @else if (status() === 'pending') {
+            <div class="state">
+              <mat-spinner diameter="48" />
+              <p class="eyebrow">{{ i18n.t('checkout.verifying') }}</p>
+              <h1>{{ i18n.t('checkout.pendingTitle') }}</h1>
+              <p class="lead muted">{{ i18n.t('checkout.pendingBody') }}</p>
+            </div>
+            @if (tracking()) {
+              <div class="tracking">
+                <p class="eyebrow">{{ i18n.t('checkout.tracking') }}</p>
+                <p class="tracking-value mono">{{ tracking() }}</p>
+              </div>
+            }
+            <div class="actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="checkAgain()"
+                [disabled]="rechecking()"
+              >
+                {{ i18n.t('checkout.checkAgain') }}
+              </button>
+              <a mat-stroked-button routerLink="/products">{{ i18n.t('checkout.continue') }}</a>
+            </div>
+          } @else {
+            <h1>{{ i18n.t('checkout.paymentFailedTitle') }}</h1>
+            <p class="lead muted">{{ i18n.t('checkout.paymentFailedBody') }}</p>
+            <a mat-stroked-button routerLink="/checkout">{{ i18n.t('checkout.tryAgain') }}</a>
+          }
+        </mat-card-content>
+      </mat-card>
     </section>
   `,
   styles: `
     .result {
       max-width: 42rem;
       padding-block: 5rem;
-      text-align: center;
       margin-inline: auto;
+    }
+
+    mat-card-content {
+      text-align: center;
     }
 
     h1 {
       margin: 0 0 1rem;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 2.25rem;
+      font: var(--mat-sys-display-small);
     }
 
-    .eyebrow {
-      margin: 0 0 1rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+    .state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
     }
 
     .lead {
       margin: 0 auto 2rem;
       max-width: 28rem;
-      color: var(--muted);
       line-height: 1.6;
     }
 
     .tracking {
       display: inline-block;
-      border: 1px solid var(--border);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--mat-sys-corner-small);
       padding: 1.25rem 2rem;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
 
     .tracking-value {
       margin: 0;
-      font-family: var(--font-mono);
-      font-size: 1.125rem;
+      font: var(--mat-sys-title-medium);
       letter-spacing: 0.06em;
     }
 
@@ -122,11 +127,6 @@ const MAX_DELAY_MS = 3000;
       flex-wrap: wrap;
       gap: 0.75rem;
       justify-content: center;
-    }
-
-    a {
-      display: inline-block;
-      text-decoration: none;
     }
   `,
 })

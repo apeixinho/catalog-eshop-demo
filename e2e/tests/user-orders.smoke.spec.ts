@@ -12,8 +12,7 @@ test.describe('Shopper smoke', () => {
     await page.goto('/products', { waitUntil: 'networkidle' });
     await expect(page.locator('a.brand')).toBeVisible();
 
-    await page.locator('.account-menu').hover();
-    await page.getByRole('menuitem', { name: 'Sign in' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     await page.waitForURL(/localhost:9000/);
     await page.locator('#username').fill('user');
