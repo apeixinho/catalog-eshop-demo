@@ -76,6 +76,14 @@ Compose passes `OAUTH_AUDIENCE` to both services.
 
 `AuthService` keeps the access token in memory; refresh token, id token, and true expiry live in `sessionStorage`. Skew applies only when deciding to refresh. `authGuard` / `ensureValidAccessToken()` renew via the refresh_token grant (no iframe silent-renew page).
 
+Demo logins (local/dev/staging seed): `user` / `password`, `manager` / `password`, `admin` / `password`. JWTs include a `roles` claim used by the SPA for `/manage/*` routes (`MANAGER`, `ADMIN`).
+
+| Account | Roles | SPA routes (after sign-in) |
+|---------|-------|----------------------------|
+| `user` | `USER` | Catalog, cart, checkout, `/account`, `/account/orders` |
+| `manager` | `USER`, `MANAGER` | Above + `/manage/orders`, `/manage/customers` (read) |
+| `admin` | `USER`, `ADMIN` | Above + admin customer CRUD via API (`/api/v1/admin/customers/**`) |
+
 ## Auth vs payment webhook
 
 Shopper JWT covers `POST /api/v1/checkout/purchase`. Order finalization uses `POST /api/v1/checkout/payment-webhook` with `X-Payment-Secret` (see [OAuth2 access policy](oauth2-access-policy.md) and [mock payment service](../payment-service/README.md)).

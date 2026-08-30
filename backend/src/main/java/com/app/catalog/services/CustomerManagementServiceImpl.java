@@ -15,6 +15,10 @@ import com.app.catalog.mapper.OrderMapper;
 import com.app.catalog.repository.CustomerRepository;
 import com.app.catalog.repository.OrderRepository;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class CustomerManagementServiceImpl implements CustomerManagementService {
 
@@ -32,8 +36,10 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
     @Override
     @Transactional(readOnly = true)
     public Page<CustomerSummaryResponse> listCustomers(Pageable pageable) {
-        return customerRepository.findAll(pageable)
-            .map(OrderMapper::toCustomerSummary);
+        var page = customerRepository.findAll(pageable);
+        Map<Long, Long> orderCounts = orderCountsByCustomerId(page.getContent());
+        return page.map(customer -> OrderMapper.toCustomerSummary(
+            customer, orderCounts.getOrDefault(customer.getId(), 0L)));
     }
 
     @Override
@@ -58,7 +64,7 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
         Customer customer = new Customer();
         applyRequest(customer, request);
         Customer saved = customerRepository.save(customer);
-        return OrderMapper.toCustomerSummary(saved);
+        return OrderMapper.toCustomerSummary(saved, orderRepository.countByCustomerId(saved.getId()));
     }
 
     @Override
@@ -77,14 +83,14 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
             });
         applyRequest(customer, request);
         Customer saved = customerRepository.save(customer);
-        return OrderMapper.toCustomerSummary(saved);
+        return OrderMapper.toCustomerSummary(saved, orderRepository.countByCustomerId(saved.getId()));
     }
 
     @Override
     @Transactional
     public void deleteCustomer(Long id) {
         Customer customer = findCustomer(id);
-        if (!customer.getOrders().isEmpty()) {
+        if (orderRepository.countByCustomerId(customer.getId()) > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer has orders");
         }
         customerRepository.delete(customer);
@@ -117,5 +123,17 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
         customer.setLastName(request.lastName().trim());
         customer.setEmail(request.email().trim());
         customer.setOauthSub(request.oauthSub().trim());
+    }
+
+    private Map<Long, Long> orderCountsByCustomerId(List<Customer> customers) {
+        if (customers.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = customers.stream().map(Customer::getId).toList();
+        Map<Long, Long> counts = new HashMap<>();
+        for (Object[] row : orderRepository.countOrdersGroupedByCustomerId(ids)) {
+            counts.put((Long) row[0], (Long) row[1]);
+        }
+        return counts;
     }
 }

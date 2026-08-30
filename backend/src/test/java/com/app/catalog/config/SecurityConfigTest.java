@@ -2,21 +2,25 @@ package com.app.catalog.config;
 
 import com.app.catalog.payment.CreatePaymentSessionResponse;
 import com.app.catalog.payment.PaymentClient;
+import com.app.catalog.support.JwtTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collection;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +39,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     private PaymentClient paymentClient;
+
+    @Autowired
+    private Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter;
 
     @Test
     void catalogGetWithoutTokenReturns200() throws Exception {
@@ -57,8 +64,7 @@ class SecurityConfigTest {
                 "sess-sec", "http://localhost:8091/checkout/sess-sec"));
 
         var result = mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-ada"))
-                    .authorities(new SimpleGrantedAuthority("SCOPE_catalog.write")))
+                .with(JwtTestSupport.catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-ada"))
                 .header("Idempotency-Key", "security-config-test-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

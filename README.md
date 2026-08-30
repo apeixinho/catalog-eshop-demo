@@ -49,7 +49,9 @@ cd frontend && npm start
 
 Demo logins (local/dev/staging seed only): `user` / `password`, `manager` / `password`, `admin` / `password`.
 
-Catalog GETs are public (`?lang=` for translated names). Checkout requires PKCE login and scope `catalog.write`, plus an `Idempotency-Key` header. The API binds the order to the JWT `sub`, builds lines from `{productId, quantity}`, prices from catalog USD × fixed FX rates for `currencyCode`, upserts the customer by oauth subject, and creates a **PENDING** order without decrementing stock. The SPA redirects to the hosted payment page; after Pay, a signed webhook decrements stock and sets `PAID` (or `CANCELLED` on cancel / stock failure).
+Catalog GETs are public (`?lang=` for translated names). Checkout requires PKCE login and scope `catalog.write`, plus an `Idempotency-Key` header. Authenticated shoppers can view order history at `/account/orders`. Users with `MANAGER` or `ADMIN` roles can manage orders and view customers at `/manage/*`; admins can create/edit/delete customers on `/manage/customers`.
+
+The API binds the order to the JWT `sub`, builds lines from `{productId, quantity}`, prices from catalog USD × fixed FX rates for `currencyCode`, upserts the customer by oauth subject, and creates a **PENDING** order without decrementing stock. The SPA redirects to the hosted payment page; after Pay, a signed webhook decrements stock and sets `PAID` (or `CANCELLED` on cancel / stock failure).
 
 ## Docker Compose
 
@@ -95,10 +97,11 @@ Path-filtered workflows (status badges at the top of this file):
 
 | Workflow | Triggers on changes to | Steps |
 |----------|------------------------|-------|
-| ✅ [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | `npm ci` → `npm run test:ci` → `npm run build` |
-| ✅ [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn -B test package` |
+| ✅ [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | Vitest (`test:ci`) → build |
+| 📊 [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn verify package` — JaCoCo **≥75%** instruction coverage (excludes entity/DTO/mapper/config/utils) |
 | ✅ [Auth Server CI](.github/workflows/auth-server.yml) | `auth-server/**` | `mvn -B test package` |
 | ✅ [Payment Service CI](.github/workflows/payment-service.yml) | `payment-service/**` | `mvn -B test package` |
+| 🎭 [Stack CI](.github/workflows/stack-ci.yml) | Compose / e2e paths | Dev Compose smoke + Playwright shopper flow |
 
 > ℹ️ The frontend workflow runs on Node 22 (Angular 22 requires Node ≥ 22.22.3). The JVM services build on Java 21.
 
@@ -112,7 +115,7 @@ Path-filtered workflows (status badges at the top of this file):
 | PR or push to `staging` / `main` | Always `compose.staging.yml` smoke (MariaDB + nginx) |
 | Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `auth-server/init-db/**`, …) | Also `compose.staging.yml` smoke on any branch |
 
-Smoke = `docker compose up --build --wait`, then curl actuator health, public products API, and the SPA root.
+Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on `dev` (locale pinned to US English in the test).
 
 Git branch `staging` is the promotion lane; Compose project `eshop-staging` is the MariaDB runtime profile — Stack CI maps **when** that stack is exercised, it does not host a long-lived environment.
 
@@ -126,5 +129,5 @@ See [Branching and CI](docs/branching-and-ci.md) for the `dev` → `staging` →
 - [Branching and CI](docs/branching-and-ci.md) — `dev` → `staging` → `main`, GitHub Rulesets, Dependabot
 - [OAuth2 access policy](docs/oauth2-access-policy.md) — resource server access (catalog, checkout JWT, payment webhook)
 - [Dev and staging environments](docs/dev-and-staging-environments.md) — Compose, MariaDB, Flyway, JWK, payment env
-- [Catalog API OpenAPI](docs/catalog-api.openapi.yaml) — catalog, checkout purchase, order status, payment webhook
+- [Catalog API OpenAPI](docs/catalog-api.openapi.yaml) — catalog, checkout, account/manage/admin APIs, payment webhook
 - [Mock payment service](payment-service/README.md) — hosted checkout and webhook

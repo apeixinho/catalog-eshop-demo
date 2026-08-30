@@ -38,11 +38,11 @@ public class CheckoutPageController {
         PaymentSession session = requireSession(sessionId);
 
         if (session.getStatus() == PaymentSession.Status.SUCCEEDED) {
-            return redirect(appendQuery(session.getSuccessUrl(), session, "success"));
+            return redirect(appendQuery(session.getSuccessUrl(), session));
         }
         if (session.getStatus() == PaymentSession.Status.CANCELLED
             || session.getStatus() == PaymentSession.Status.FAILED) {
-            return redirect(appendQuery(session.getCancelUrl(), session, "failed"));
+            return redirect(appendQuery(session.getCancelUrl(), session));
         }
 
         String failure = webhookClient.notify(session, PaymentSession.Status.SUCCEEDED);
@@ -50,11 +50,11 @@ public class CheckoutPageController {
             session.setStatus(PaymentSession.Status.FAILED);
             session.setFailureReason(failure);
             webhookClient.notify(session, PaymentSession.Status.CANCELLED);
-            return redirect(appendQuery(session.getCancelUrl(), session, "failed"));
+            return redirect(appendQuery(session.getCancelUrl(), session));
         }
 
         session.setStatus(PaymentSession.Status.SUCCEEDED);
-        return redirect(appendQuery(session.getSuccessUrl(), session, "success"));
+        return redirect(appendQuery(session.getSuccessUrl(), session));
     }
 
     @PostMapping("/checkout/{sessionId}/cancel")
@@ -65,7 +65,7 @@ public class CheckoutPageController {
             session.setStatus(PaymentSession.Status.CANCELLED);
             webhookClient.notify(session, PaymentSession.Status.CANCELLED);
         }
-        return redirect(appendQuery(session.getCancelUrl(), session, "cancelled"));
+        return redirect(appendQuery(session.getCancelUrl(), session));
     }
 
     private PaymentSession requireSession(String sessionId) {
@@ -79,9 +79,8 @@ public class CheckoutPageController {
         return view;
     }
 
-    private static String appendQuery(String baseUrl, PaymentSession session, String status) {
+    private static String appendQuery(String baseUrl, PaymentSession session) {
         return UriComponentsBuilder.fromUri(URI.create(baseUrl))
-            .queryParam("status", status)
             .queryParam("session", session.getId())
             .queryParam("tracking", session.getOrderTrackingNumber())
             .build(true)

@@ -33,7 +33,11 @@ import { OrderSummary } from '../shared/models';
             <tbody>
               @for (order of orders(); track order.orderTrackingNumber) {
                 <tr>
-                  <td class="mono">{{ order.orderTrackingNumber }}</td>
+                  <td class="mono">
+                    <a [routerLink]="['/account/orders', order.orderTrackingNumber]">{{
+                      order.orderTrackingNumber
+                    }}</a>
+                  </td>
                   <td>{{ i18n.t('orders.status.' + order.status) }}</td>
                   <td>{{ order.totalPrice | number: '1.2-2' }} {{ order.currencyCode }}</td>
                   <td>{{ formatDate(order.dateCreated) }}</td>

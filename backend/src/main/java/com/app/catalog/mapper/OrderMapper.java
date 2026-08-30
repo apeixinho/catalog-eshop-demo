@@ -28,15 +28,9 @@ public final class OrderMapper {
         );
     }
 
-    public static OrderDetailResponse toDetail(Order order) {
+    public static OrderDetailResponse toDetail(Order order, long customerOrderCount) {
         Customer customer = order.getCustomer();
-        CustomerSummaryResponse customerSummary = new CustomerSummaryResponse(
-            customer.getId(),
-            customer.getFirstName(),
-            customer.getLastName(),
-            customer.getEmail(),
-            customer.getOrders() != null ? customer.getOrders().size() : 0
-        );
+        CustomerSummaryResponse customerSummary = toCustomerSummary(customer, customerOrderCount);
         List<OrderItemResponse> items = order.getOrderItems().stream()
             .map(OrderMapper::toItem)
             .toList();
@@ -55,13 +49,13 @@ public final class OrderMapper {
         );
     }
 
-    public static CustomerSummaryResponse toCustomerSummary(Customer customer) {
+    public static CustomerSummaryResponse toCustomerSummary(Customer customer, long orderCount) {
         return new CustomerSummaryResponse(
             customer.getId(),
             customer.getFirstName(),
             customer.getLastName(),
             customer.getEmail(),
-            customer.getOrders() != null ? customer.getOrders().size() : 0
+            orderCount
         );
     }
 
