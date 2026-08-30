@@ -8,11 +8,15 @@ Spring Boot 4.1 OAuth2 resource server for Catalog E-Shop products API and check
 
 ## Access policy
 
-- Public GET: products, categories, countries, states, currency rates
-- JWT + `SCOPE_catalog.write`: shopper checkout and account order history (`/api/v1/checkout/**`, `/api/v1/account/orders/**`)
+Operational summary; full decision record: [OAuth2 access policy](../docs/oauth2-access-policy.md).
+
+- Public GET: products, categories, countries, states, currency rates; OpenAPI/Swagger UI; actuator `/actuator/health`, `/actuator/info`; CORS preflight (`OPTIONS /**`)
+- JWT + `SCOPE_catalog.write`: shopper checkout and account APIs (`/api/v1/checkout/**` except payment webhook, `/api/v1/account/**`)
 - JWT + `ROLE_MANAGER` or `ROLE_ADMIN`: manage orders and read customers (`/api/v1/manage/**`)
 - JWT + `ROLE_ADMIN`: customer CRUD (`/api/v1/admin/customers/**`)
-- Shared secret (no JWT): `POST /api/v1/checkout/payment-webhook`
+- Shared secret (no JWT at filter; `X-Payment-Secret` in controller): `POST /api/v1/checkout/payment-webhook`
+- JWT authorities: OAuth2 scopes (`SCOPE_*`) and roles (`ROLE_*`) from token claims
+- `catalog.read` scope is issued to the SPA but not enforced on routes today
 - Validates issuer and audience (`OAUTH_AUDIENCE`, default `catalog-api`)
 
 Manage orders: only `PENDING` → `CANCELLED` via API; `PENDING` orders cannot be deleted; deleting a `PAID` order restores stock first (409 if restore fails). See [OAuth2 access policy](../docs/oauth2-access-policy.md).
