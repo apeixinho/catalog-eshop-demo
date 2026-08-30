@@ -10,7 +10,7 @@ Agent notes for this monorepo (especially Cursor Cloud). Standard run/build comm
 ## Frontend (`frontend/`)
 
 - Angular 22 + TypeScript **~6.0.3** (`>=6.0 <6.1`; do not bump to TS 7).
-- Test: `npm run test:ci` (Vitest). Build: `npm run build`.
+- Test: `npm run test:ci` (Vitest). Coverage: `npm run test:ci:coverage` (`@vitest/coverage-v8`; HTML report in `coverage/`). Build: `npm run build`.
 - **Default locale is PT** (`catalog.locale.country` in `localStorage`). E2E and copy-based selectors must pin US English or use locale-neutral selectors (see `e2e/tests/`).
 
 ## JVM services (`backend/`, `auth-server/`, `payment-service/`)
