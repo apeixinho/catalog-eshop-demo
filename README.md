@@ -108,6 +108,8 @@ Path-filtered workflows (status badges at the top of this file):
 
 [Stack CI](.github/workflows/stack-ci.yml) is a separate workflow (Option B) for cross-cutting Compose/Docker paths and promotion branches:
 
+- **Dev Compose** (`compose.dev.yml`) on PRs/pushes to `dev`: health checks plus a Playwright smoke test (`e2e/`: user login → products → account orders).
+
 | When | What runs |
 |------|-----------|
 | PR or push to `dev` | Always `compose.dev.yml` smoke (H2) |
