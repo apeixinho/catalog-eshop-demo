@@ -187,6 +187,32 @@ class ManageOrderIntegrationTest {
     }
 
     @Test
+    void deletePaidMultiLineOrderRollsBackPartialStockRestore() throws Exception {
+        Product product2 = productRepository.findById(2L).orElseThrow();
+        product2.setUnitsInStock(100);
+        product2.setActive(true);
+        productRepository.saveAndFlush(product2);
+
+        Long multiOrderId = placePaidMultiLineOrder();
+        int stock1AfterPay = productRepository.findById(1L).orElseThrow().getUnitsInStock();
+        int stock2AfterPay = productRepository.findById(2L).orElseThrow().getUnitsInStock();
+
+        Product inactiveTarget = productRepository.findById(2L).orElseThrow();
+        inactiveTarget.setActive(false);
+        productRepository.saveAndFlush(inactiveTarget);
+
+        mockMvc.perform(delete("/api/v1/manage/orders/" + multiOrderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+            .andExpect(status().isConflict());
+
+        assertThat(orderRepository.findById(multiOrderId)).isPresent();
+        assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
+            .isEqualTo(stock1AfterPay);
+        assertThat(productRepository.findById(2L).orElseThrow().getUnitsInStock())
+            .isEqualTo(stock2AfterPay);
+    }
+
+    @Test
     void latePaymentWebhookRejectedAfterCancel() throws Exception {
         mockMvc.perform(put("/api/v1/manage/orders/" + orderId)
                 .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1"))
@@ -214,5 +240,45 @@ class ManageOrderIntegrationTest {
                     {"sessionId":"%s","status":"SUCCEEDED","orderTrackingNumber":"%s"}
                     """.formatted(paymentSessionId, trackingNumber)))
             .andExpect(status().isOk());
+    }
+
+    private Long placePaidMultiLineOrder() throws Exception {
+        String sessionId = "sess-multi-line-" + System.nanoTime();
+        when(paymentClient.createSession(any()))
+            .thenReturn(new CreatePaymentSessionResponse(
+                sessionId, "http://localhost:8091/checkout/" + sessionId));
+
+        String body = """
+            {
+              "customer":{"firstName":"Multi","lastName":"Line","email":"multi-line@example.com"},
+              "orderItems":[{"quantity":2,"productId":1},{"quantity":1,"productId":2}],
+              "shippingAddress":{"street":"1 St","city":"Lisbon","stateId":224,"countryCode":"PT","zipCode":"1000"},
+              "billingAddress":{"street":"1 St","city":"Lisbon","stateId":224,"countryCode":"PT","zipCode":"1000"},
+              "currencyCode":"USD"
+            }
+            """;
+
+        MvcResult result = mockMvc.perform(post("/api/v1/checkout/purchase")
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-multi-line"))
+                .header("Idempotency-Key", "multi-line-key-" + System.nanoTime())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        String tracking = com.jayway.jsonpath.JsonPath.read(
+            result.getResponse().getContentAsString(), "$.orderTrackingNumber");
+        String session = orderRepository.findByOrderTrackingNumber(tracking).orElseThrow().getPaymentSessionId();
+        Long id = orderRepository.findByOrderTrackingNumber(tracking).orElseThrow().getId();
+
+        mockMvc.perform(post("/api/v1/checkout/payment-webhook")
+                .header("X-Payment-Secret", "dev-payment-secret")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"sessionId":"%s","status":"SUCCEEDED","orderTrackingNumber":"%s"}
+                    """.formatted(session, tracking)))
+            .andExpect(status().isOk());
+
+        return id;
     }
 }
