@@ -30,6 +30,15 @@ Open http://localhost:4200. Defaults talk to API `http://localhost:8090` and aut
 
 See [OAuth2 access policy](../docs/oauth2-access-policy.md).
 
+## Test
+
+```bash
+npm run test:ci              # Vitest (no coverage)
+npm run test:ci:coverage     # Vitest + @vitest/coverage-v8 → coverage/
+```
+
+Open `coverage/index.html` for the HTML report. Frontend CI uploads the report as an artifact.
+
 ## Assets
 
 Product images under `public/assets/images/products/` (paths match DB `image_url`). Relative URLs are served from the SPA origin (leading `/` added in the products page).

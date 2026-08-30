@@ -1,28 +1,40 @@
 # OAuth2 access policy (Authorization Server + Resource Server)
 
+Decision record for how authentication and authorization are split across this monorepo. For a short rule table maintained with the code, see [backend/README.md](../backend/README.md#access-policy).
+
 ## Status
 
 Accepted (public catalog, JWT checkout; payment webhook uses shared secret)
 
 ## Context
 
-The luv2shop reference backend has no Spring Security. We need an in-repo identity provider and JWT protection for sensitive operations, while keeping browse/search/geo open for a typical e-commerce SPA (public catalog, authenticate at checkout). Mock payment finalization is a server-to-server call and must not require a shopper JWT.
+The stack separates **identity** from **API authorization**:
+
+- **`auth-server`** — Spring Authorization Server that authenticates users and issues JWT access tokens (RS256, PKCE for the SPA).
+- **`backend`** — Spring Boot **OAuth2 resource server** with `@EnableWebSecurity`. It does not log users in, but it **validates JWTs** (issuer, audience, signature via JWKS) and **enforces route-level access** (scopes and roles) in `SecurityConfig`.
+
+Browse/search/geo stay public for a typical e-commerce SPA; checkout and account flows require a shopper JWT. Mock payment finalization is server-to-server and must not depend on a browser session or shopper token.
 
 ## Decision
 
 1. Run a **Spring Authorization Server** as `auth-server` (port 9000).
-2. Configure the catalog **backend** as an **OAuth2 Resource Server** validating JWTs via the issuer JWKS.
+2. Configure the catalog **backend** as an **OAuth2 Resource Server** validating JWTs via the issuer JWKS (`SecurityFilterChain` + `oauth2ResourceServer().jwt()`).
 3. Register a public SPA client `catalog-spa` using Authorization Code + PKCE.
 4. Issue JWTs (RS256) with audience `catalog-api` and scopes `openid`, `profile`, `catalog.read`, `catalog.write`.
-5. **Access policy** (backend `SecurityFilterChain`):
-   - **Permit anonymous:** catalog (products/categories), countries/states (geo), currency rates (`GET /api/v1/currency/**`), OpenAPI/Swagger UI, and `/actuator/health` (probes) for Docker healthchecks.
-   - **Require Bearer JWT + `catalog.write`:** shopper checkout APIs under `/api/v1/checkout/**`, account order history under `/api/v1/account/orders/**`, and `GET /api/v1/checkout/orders/{trackingNumber}` (owner-scoped order status for the SPA result page).
-   - **Require Bearer JWT + `ROLE_MANAGER` or `ROLE_ADMIN`:** order management under `/api/v1/manage/orders/**` (list/read/update/delete) and customer read under `/api/v1/manage/customers/**`.
+5. **Access policy** (backend `SecurityFilterChain` in `SecurityConfig`):
+   - **Permit anonymous:** catalog GETs (products/categories), countries/states (geo), currency rates (`GET /api/v1/currency/**`), OpenAPI/Swagger UI, CORS preflight (`OPTIONS /**`), and actuator probes (`/actuator/health`, `/actuator/health/**`, `/actuator/info`).
+   - **Require Bearer JWT + `SCOPE_catalog.write`:** `/api/v1/checkout/**` (purchase, order status — **not** the payment webhook; see below) and `/api/v1/account/**` (order history and detail). Spring Security evaluates `permitAll` for the webhook **before** the checkout scope rule.
+   - **Require Bearer JWT + `ROLE_MANAGER` or `ROLE_ADMIN`:** `/api/v1/manage/**` — order management (`/api/v1/manage/orders/**`) and read-only customer list/detail (`/api/v1/manage/customers/**`).
    - **Require Bearer JWT + `ROLE_ADMIN`:** customer CRUD under `/api/v1/admin/customers/**`.
-   - **Permit without JWT (shared secret):** `POST /api/v1/checkout/payment-webhook` — called by `payment-service` with header `X-Payment-Secret` (not a browser JWT). Hosted checkout pages on `payment-service` are session-token URLs and do not use the catalog IdP.
-6. Demo users are seeded for local/dev (e.g. `user` / `password`, `manager` / `password`, `admin` / `password`); staging uses JDBC-backed users in MariaDB `catalog_auth`. Access tokens include a `roles` claim (`USER`, `MANAGER`, `ADMIN`) for backend authorization.
-7. Access tokens include audience `catalog-api`; the resource server validates `jwt.audiences`.
-8. SPA keeps the access token in memory and renews via `refresh_token` stored in `sessionStorage` (no silent-renew iframe / `silent-renew.html`).
+6. **JWT authorities on the resource server:** the backend maps both OAuth2 **scopes** (`scope` claim → `SCOPE_catalog.write`, etc.) and **roles** (`roles` claim → `ROLE_MANAGER`, `ROLE_ADMIN`, …). Integration tests should build JWT post-processors via the app's `jwtGrantedAuthoritiesConverter` bean (see `JwtTestSupport`), not hard-code incomplete authority sets.
+7. **`catalog.read` scope:** issued to the SPA and included in token requests, but **not enforced** on the backend today — public catalog GETs are anonymous; no route requires `SCOPE_catalog.read`.
+8. Demo users are seeded for local/dev (e.g. `user` / `password`, `manager` / `password`, `admin` / `password`); staging uses JDBC-backed users in MariaDB `catalog_auth`. Access tokens include a `roles` claim (`USER`, and optionally `MANAGER` or `ADMIN`) plus `preferred_username` for SPA role checks.
+9. Access tokens include audience `catalog-api`; the resource server validates `jwt.audiences`.
+10. SPA keeps the access token in memory and renews via `refresh_token` stored in `sessionStorage` (no silent-renew iframe / `silent-renew.html`).
+
+### Payment webhook (two layers)
+
+`POST /api/v1/checkout/payment-webhook` is **`permitAll` at the Spring Security filter** (no Bearer JWT) because `payment-service` is not an OAuth client. **Authorization is enforced in application code:** `PaymentWebhookController` requires header `X-Payment-Secret` matching `catalog.payment.webhook-secret` (401 if missing or wrong). Hosted checkout pages on `payment-service` use session-token URLs and do not use the catalog IdP.
 
 ## Stock and checkout
 
@@ -38,14 +50,15 @@ The luv2shop reference backend has no Spring Security. We need an in-repo identi
 
 ## Consequences
 
-- Shoppers can browse and search without logging in; placing an order requires PKCE login + Bearer token.
-- Payment completion is independent of the SPA session: the mock payment service redirects the browser and notifies the API via a signed webhook.
+- Shoppers can browse and search without logging in; placing an order requires PKCE login + Bearer token with `catalog.write`.
+- Payment completion is independent of the SPA session: the mock payment service redirects the browser and notifies the API via the shared-secret webhook.
 - Backend and auth-server share a fixed issuer/client/audience contract so they can be developed in parallel.
 - Compose networking uses service hostname `auth-server` for server-to-server JWKS; browsers use `localhost:9000`.
 - Staging Compose mounts `auth-server/init-db` so `catalog_auth` exists beside `catalog_db`.
 
 ## References
 
+- [Backend access policy](../backend/README.md#access-policy)
 - [Dev and staging environments](dev-and-staging-environments.md)
 - [Mock payment service](../payment-service/README.md)
 - https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/index.html

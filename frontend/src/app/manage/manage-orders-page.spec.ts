@@ -92,4 +92,19 @@ describe('ManageOrdersPage', () => {
     expect(api.updateManageOrder).toHaveBeenCalledWith(42, 'CANCELLED');
     expect(api.listManageOrders.mock.calls.length).toBeGreaterThan(listCallsAfterInit);
   });
+
+  it('deletes pending order immediately without confirm dialog', () => {
+    api.deleteManageOrder.mockReturnValue(of(void 0));
+
+    component.deleteOrder(sampleOrder);
+
+    expect(component.confirmDeleteOrder()).toBeNull();
+    expect(api.deleteManageOrder).toHaveBeenCalledWith(42);
+  });
+
+  it('cancelStatusEdit clears editing state', () => {
+    component.startStatusEdit(sampleOrder);
+    component.cancelStatusEdit();
+    expect(component.editingStatusId()).toBeNull();
+  });
 });
