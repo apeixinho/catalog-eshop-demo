@@ -217,21 +217,29 @@ paths:
       responses:
         '200':
           description: Page of order summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageOrderSummary'
         '401':
           description: Missing or invalid JWT
-  /api/v1/account/orders/{id}:
+  /api/v1/account/orders/{trackingNumber}:
     get:
       summary: Order detail for the authenticated owner
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: trackingNumber
           required: true
-          schema: { type: integer, format: int64 }
+          schema: { type: string }
       responses:
         '200':
           description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
         '401':
           description: Missing or invalid JWT
         '404':
@@ -251,6 +259,10 @@ paths:
       responses:
         '200':
           description: Page of order summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageOrderSummary'
         '401':
           description: Missing or invalid JWT
         '403':
@@ -268,6 +280,10 @@ paths:
       responses:
         '200':
           description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
         '401':
           description: Missing or invalid JWT
         '403':
@@ -295,6 +311,10 @@ paths:
       responses:
         '200':
           description: Updated order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
         '401':
           description: Missing or invalid JWT
         '403':
@@ -341,6 +361,10 @@ paths:
       responses:
         '200':
           description: Page of customer summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageCustomerSummary'
         '401':
           description: Missing or invalid JWT
         '403':
@@ -544,3 +568,32 @@ components:
         totalPages: { type: integer }
         number: { type: integer }
         size: { type: integer }
+    OrderItem:
+      type: object
+      required: [productId, quantity, unitPrice, productName]
+      properties:
+        productId: { type: integer, format: int64 }
+        quantity: { type: integer }
+        unitPrice: { type: number, format: double }
+        productName: { type: string }
+    OrderDetail:
+      type: object
+      required: [id, orderTrackingNumber, status, totalPrice, currencyCode, totalQuantity, dateCreated, customer, items]
+      properties:
+        id: { type: integer, format: int64 }
+        orderTrackingNumber: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
+        totalPrice: { type: number, format: double }
+        currencyCode: { type: string }
+        totalQuantity: { type: integer }
+        dateCreated: { type: string, format: date-time }
+        lastUpdated: { type: string, format: date-time }
+        paymentUrl: { type: string, format: uri }
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
