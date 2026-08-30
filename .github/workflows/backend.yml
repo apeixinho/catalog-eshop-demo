@@ -23,4 +23,10 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - run: mvn -B test package
+      - run: mvn -B verify package
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-jacoco-report
+          path: backend/target/site/jacoco/
+          retention-days: 14
