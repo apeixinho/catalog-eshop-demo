@@ -1,24 +1,49 @@
 # AGENTS.md
 
-## Cursor Cloud specific instructions
+Agent notes for this monorepo (especially Cursor Cloud). Standard run/build commands are in the root [README.md](README.md) and each module's README; CI steps are in `.github/workflows/*.yml`. Only non-obvious caveats are listed here.
 
-Monorepo with an Angular SPA and three Spring Boot services. Standard run/build commands live in the root `README.md` (Quick start) and each module's `README.md`; per-service CI steps are in `.github/workflows/*.yml`. Only the non-obvious caveats are listed here.
+## Toolchain
 
-### Toolchain (non-obvious)
-- **Node**: the Angular 22 CLI requires **Node ≥ 22.22.3**. The VM's default `/exec-daemon/node` may be older, so this repo uses an nvm-managed Node 22 (set as the nvm `default`, sourced from `~/.bashrc`). If `ng`/`npm run build` fails with a "minimum Node.js version" error, run `nvm use 22`. CI's `setup-node@v7` with `node-version: "22"` picks a compatible release automatically.
-- **Java 21** is required (all POMs set `java.version=21`). **Maven is not preinstalled** — install with `apt-get install -y maven` (3.8.7 works). There is no Maven wrapper.
+- **Node**: Angular 22 requires **Node ≥ 22.22.3**. Cloud VM default Node may be older — use nvm (`nvm use 22`). CI `setup-node@v7` with `node-version: "22"` is fine.
+- **Java 21** (all POMs). **Maven is not preinstalled** on the Cloud VM — `apt-get install -y maven` (3.8.7 works). No Maven wrapper in repo.
 
-### Frontend (`frontend/`)
-- Angular 22 + TypeScript 6.0. TypeScript is pinned to `~6.0.3` because Angular 22 requires `>=6.0 <6.1` (do not bump to TS 7).
-- Test: `npm run test:ci` (Vitest via `ng test --watch=false`). Build: `npm run build`.
+## Frontend (`frontend/`)
 
-### Backend / auth-server / payment-service (Spring Boot 4)
-- `backend`, `auth-server`, and `payment-service` run on **Spring Boot 4.1.0** (Spring Framework 7 / Spring Security 7).
-- **H2 uses the Boot 4.1.0 default (2.4.240).** H2 2.4.x removed the non-standard `DATETIME` keyword, so the H2 dev/test Flyway migrations use `TIMESTAMP(6)` instead (H2 is dev/test-only; staging uses MariaDB, which keeps `DATETIME(6)`). The H2 `V4` migration was rewritten in place — acceptable because these are dev/test databases (recreated on each run), but note Flyway `validate-on-migrate` is on, so avoid editing migrations already applied to a long-lived database.
-- Spring Boot 4 modularized auto-config: Flyway (`spring-boot-flyway`), `RestClient.Builder` (`spring-boot-restclient`), and the MockMvc test slice (`spring-boot-starter-webmvc-test`, with `@AutoConfigureMockMvc` now under `org.springframework.boot.webmvc.test.autoconfigure`) must be pulled in explicitly.
-- Boot 4 auto-configures a **Jackson 3** (`tools.jackson`) `ObjectMapper`; use that package when autowiring an `ObjectMapper`.
-- Test/build a service: `cd <module> && mvn -B test` (CI runs `mvn -B test package`).
+- Angular 22 + TypeScript **~6.0.3** (`>=6.0 <6.1`; do not bump to TS 7).
+- Test: `npm run test:ci` (Vitest). Build: `npm run build`.
+- **Default locale is PT** (`catalog.locale.country` in `localStorage`). E2E and copy-based selectors must pin US English or use locale-neutral selectors (see `e2e/tests/`).
 
-### Running the stack
-- See `README.md` Quick start (JVM) or Docker Compose. Do **not** run `compose.dev.yml` and `compose.staging.yml` at the same time — they share host ports `4200/8090/8091/9000`. Dev uses H2 + in-memory auth users; demo logins `user`/`password`, `manager`/`password`, and `admin`/`password`.
-- Branch promotion, GitHub Rulesets, and required CI checks: [docs/branching-and-ci.md](docs/branching-and-ci.md).
+## JVM services (`backend/`, `auth-server/`, `payment-service/`)
+
+Spring Boot **4.1** (Spring Framework 7 / Spring Security 7).
+
+- **H2** (Boot default 2.4.240): dev/test Flyway uses `TIMESTAMP(6)`, not `DATETIME` (removed in H2 2.4.x). MariaDB staging keeps `DATETIME(6)`. Avoid editing H2 migrations already applied to a long-lived DB (`validate-on-migrate` is on).
+- Boot 4 modular auto-config — pull in explicitly when needed:
+  - Flyway: `spring-boot-flyway`
+  - `RestClient.Builder`: `spring-boot-restclient`
+  - MockMvc slice: `spring-boot-starter-webmvc-test` (`@AutoConfigureMockMvc` in `org.springframework.boot.webmvc.test.autoconfigure`)
+- **Jackson 3** (`tools.jackson` package) for autowired `ObjectMapper`.
+
+### Test / build commands
+
+| Module | Command | Notes |
+|--------|---------|--------|
+| `backend/` | `mvn -B verify` | JaCoCo **≥75%** instruction coverage (excludes entity/DTO/mapper/config/utils) |
+| `auth-server/`, `payment-service/` | `mvn -B test package` | |
+| all | `mvn spring-boot:run` | per module |
+
+Backend integration tests: build JWT post-processors via [JwtTestSupport](backend/src/test/java/com/app/catalog/support/JwtTestSupport.java) and the app's `jwtGrantedAuthoritiesConverter` bean — do not hard-code `.authorities(() -> "SCOPE_...")` (roles claim is required for `/manage/**`).
+
+## E2E (`e2e/`)
+
+- Playwright smoke runs in Stack CI after Compose dev is healthy.
+- `E2E_BASE_URL` defaults to `http://localhost:4200`.
+- Pin US locale in tests (`localStorage.setItem('catalog.locale.country', 'US')`) because the SPA defaults to PT.
+
+## Running the stack
+
+See README Quick start (JVM) or Docker Compose. **Do not** run `compose.dev.yml` and `compose.staging.yml` simultaneously — shared ports `4200/8090/8091/9000`.
+
+Demo logins (dev/staging seed): `user` / `password`, `manager` / `password`, `admin` / `password`.
+
+Branch promotion and required checks: [docs/branching-and-ci.md](docs/branching-and-ci.md).

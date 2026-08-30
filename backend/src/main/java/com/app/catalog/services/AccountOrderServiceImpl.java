@@ -17,9 +17,13 @@ import com.app.catalog.repository.OrderRepository;
 public class AccountOrderServiceImpl implements AccountOrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderDetailMapperService orderDetailMapperService;
 
-    public AccountOrderServiceImpl(OrderRepository orderRepository) {
+    public AccountOrderServiceImpl(
+        OrderRepository orderRepository,
+        OrderDetailMapperService orderDetailMapperService) {
         this.orderRepository = orderRepository;
+        this.orderDetailMapperService = orderDetailMapperService;
     }
 
     @Override
@@ -42,7 +46,7 @@ public class AccountOrderServiceImpl implements AccountOrderService {
         if (order.getCustomer() == null || !oauthSub.equals(order.getCustomer().getOauthSub())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown order");
         }
-        return OrderMapper.toDetail(order);
+        return orderDetailMapperService.toDetail(order);
     }
 
     private static void requireOauthSub(String oauthSub) {

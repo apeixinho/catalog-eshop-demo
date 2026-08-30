@@ -25,6 +25,8 @@ Open http://localhost:4200. Defaults talk to API `http://localhost:8090` and aut
 - Checkout routes are guarded; catalog is anonymous
 - Guest cart lines (`productId` + `quantity`) persist in `localStorage` across login redirects; cleared after successful payment and on sign-out
 - After purchase, the SPA redirects to the mock payment page, then `/checkout/result`
+- Authenticated shoppers: `/account/orders` (order history)
+- `ROLE_MANAGER` or `ROLE_ADMIN`: `/manage/orders`, `/manage/customers` (managers read-only; admins edit customers on the same page)
 
 See [OAuth2 access policy](../docs/oauth2-access-policy.md).
 

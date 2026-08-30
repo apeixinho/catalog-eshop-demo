@@ -2,7 +2,6 @@ package com.app.catalog;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -15,8 +14,8 @@ import com.app.catalog.payment.CreatePaymentSessionResponse;
 import com.app.catalog.payment.PaymentClient;
 import com.app.catalog.repository.OrderRepository;
 import com.app.catalog.repository.ProductRepository;
+import com.app.catalog.support.JwtTestSupport;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,11 +58,13 @@ class OrderAccessIntegrationTest {
     void placeOrderForUser() throws Exception {
         Product product = productRepository.findById(1L).orElseThrow();
         product.setUnitsInStock(100);
+        product.setActive(true);
         productRepository.saveAndFlush(product);
 
         when(paymentClient.createSession(any()))
             .thenReturn(new CreatePaymentSessionResponse(
-                "sess-order-access", "http://localhost:8091/checkout/sess-order-access"));
+                "sess-order-access-" + System.nanoTime(),
+                "http://localhost:8091/checkout/sess-order-access"));
 
         String body = """
             {
@@ -77,7 +78,7 @@ class OrderAccessIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/v1/checkout/purchase")
                 .with(userJwt("user-order-access"))
-                .header("Idempotency-Key", "order-access-key")
+                .header("Idempotency-Key", "order-access-key-" + System.nanoTime())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk())
@@ -98,6 +99,20 @@ class OrderAccessIntegrationTest {
         mockMvc.perform(get("/api/v1/account/orders").with(userJwt("user-order-access")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content[0].orderTrackingNumber").value(trackingNumber));
+    }
+
+    @Test
+    void userCanGetOwnOrderDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/account/orders/" + trackingNumber).with(userJwt("user-order-access")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.orderTrackingNumber").value(trackingNumber))
+            .andExpect(jsonPath("$.customer.email").value("ada-order-access@example.com"));
+    }
+
+    @Test
+    void userCannotGetOthersOrderDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/account/orders/" + trackingNumber).with(userJwt("other-user")))
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -179,22 +194,18 @@ class OrderAccessIntegrationTest {
 
     /** JWT claims only — uses the app's {@code SecurityConfig#jwtGrantedAuthoritiesConverter}. */
     private RequestPostProcessor userJwt(String subject) {
-        return jwtWithClaims(j -> j.subject(subject).claim("scope", "catalog.write"));
+        return JwtTestSupport.catalogWriteJwt(jwtGrantedAuthoritiesConverter, subject);
     }
 
     private RequestPostProcessor managerJwt() {
-        return jwtWithClaims(j -> j.subject("manager-1")
-            .claim("scope", "catalog.write")
-            .claim("roles", List.of("USER", "MANAGER")));
+        return JwtTestSupport.managerJwt(jwtGrantedAuthoritiesConverter, "manager-1");
     }
 
     private RequestPostProcessor adminJwt() {
-        return jwtWithClaims(j -> j.subject("admin-1")
-            .claim("scope", "catalog.write")
-            .claim("roles", List.of("USER", "ADMIN")));
+        return JwtTestSupport.adminJwt(jwtGrantedAuthoritiesConverter, "admin-1");
     }
 
     private RequestPostProcessor jwtWithClaims(Consumer<Jwt.Builder> customizer) {
-        return jwt().jwt(customizer).authorities(jwtGrantedAuthoritiesConverter);
+        return JwtTestSupport.withClaims(jwtGrantedAuthoritiesConverter, customizer);
     }
 }

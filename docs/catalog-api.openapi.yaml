@@ -4,9 +4,8 @@ info:
   version: 1.0.0
   description: >
     Catalog and currency rates are public (`lang` selects translation locale with English fallback).
-    Checkout purchase requires Bearer JWT with scope catalog.write and an Idempotency-Key header.
-    Authenticated shoppers can poll GET /api/v1/checkout/orders/{trackingNumber} for payment status.
-    Catalog unit prices are USD; checkout converts with fixed rates for currencyCode.
+    Checkout and account order history require Bearer JWT with scope catalog.write.
+    Manage orders and read customers require ROLE_MANAGER or ROLE_ADMIN; customer CRUD requires ROLE_ADMIN.
     Orders start PENDING; stock is decremented when payment-service calls the payment webhook
     with header X-Payment-Secret (no JWT).
 servers:
@@ -203,6 +202,243 @@ paths:
           description: Missing or invalid payment secret
         '409':
           description: Insufficient stock on SUCCEEDED (order CANCELLED)
+  /api/v1/account/orders:
+    get:
+      summary: List authenticated shopper orders (newest first)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of order summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageOrderSummary'
+        '401':
+          description: Missing or invalid JWT
+  /api/v1/account/orders/{trackingNumber}:
+    get:
+      summary: Order detail for the authenticated owner
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: trackingNumber
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          description: Missing or invalid JWT
+        '404':
+          description: Unknown order or not owned by caller
+  /api/v1/manage/orders:
+    get:
+      summary: List all orders (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of order summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageOrderSummary'
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+  /api/v1/manage/orders/{id}:
+    get:
+      summary: Order detail (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown order
+    put:
+      summary: Update order status (manual cancel only)
+      description: >
+        Only PENDING → CANCELLED is allowed. PAID must come from the payment webhook;
+        other transitions return 409 Conflict.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+      responses:
+        '200':
+          description: Updated order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown order
+        '409':
+          description: Invalid status transition
+    delete:
+      summary: Delete order (restores stock when PAID)
+      description: >
+        PENDING orders cannot be deleted (409) — cancel first. Deleting a PAID order restores
+        product stock before removal. Returns 409 if stock cannot be restored (e.g. product inactive).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Order deleted
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown order
+        '409':
+          description: Pending order, invalid transition, or could not restore stock
+  /api/v1/manage/customers:
+    get:
+      summary: List customers (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of customer summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageCustomerSummary'
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+  /api/v1/manage/customers/{id}:
+    get:
+      summary: Customer detail with order history (manager or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Customer detail
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_MANAGER or ROLE_ADMIN
+        '404':
+          description: Unknown customer
+  /api/v1/admin/customers:
+    post:
+      summary: Create customer (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Created customer summary
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_ADMIN
+  /api/v1/admin/customers/{id}:
+    put:
+      summary: Update customer (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Updated customer summary
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_ADMIN
+        '404':
+          description: Unknown customer
+    delete:
+      summary: Delete customer without orders (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Customer deleted
+        '401':
+          description: Missing or invalid JWT
+        '403':
+          description: Requires ROLE_ADMIN
+        '404':
+          description: Unknown customer
+        '409':
+          description: Customer has orders
 components:
   securitySchemes:
     bearerAuth:
@@ -273,3 +509,91 @@ components:
           type: string
           enum: [SUCCEEDED, CANCELLED, FAILED]
         orderTrackingNumber: { type: string }
+    UpdateOrderRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
+    CustomerUpsertRequest:
+      type: object
+      required: [firstName, lastName, email, oauthSub]
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        oauthSub: { type: string }
+    CustomerSummary:
+      type: object
+      required: [id, firstName, lastName, email, orderCount]
+      properties:
+        id: { type: integer, format: int64 }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        orderCount: { type: integer, format: int64 }
+    OrderSummary:
+      type: object
+      required: [id, orderTrackingNumber, status, totalPrice, currencyCode, totalQuantity, dateCreated]
+      properties:
+        id: { type: integer, format: int64 }
+        orderTrackingNumber: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
+        totalPrice: { type: number, format: double }
+        currencyCode: { type: string }
+        totalQuantity: { type: integer }
+        dateCreated: { type: string, format: date-time }
+    PageOrderSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+        number: { type: integer }
+        size: { type: integer }
+    PageCustomerSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerSummary'
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+        number: { type: integer }
+        size: { type: integer }
+    OrderItem:
+      type: object
+      required: [productId, quantity, unitPrice, productName]
+      properties:
+        productId: { type: integer, format: int64 }
+        quantity: { type: integer }
+        unitPrice: { type: number, format: double }
+        productName: { type: string }
+    OrderDetail:
+      type: object
+      required: [id, orderTrackingNumber, status, totalPrice, currencyCode, totalQuantity, dateCreated, customer, items]
+      properties:
+        id: { type: integer, format: int64 }
+        orderTrackingNumber: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
+        totalPrice: { type: number, format: double }
+        currencyCode: { type: string }
+        totalQuantity: { type: integer }
+        dateCreated: { type: string, format: date-time }
+        lastUpdated: { type: string, format: date-time }
+        paymentUrl: { type: string, format: uri }
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'

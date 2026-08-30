@@ -1,8 +1,8 @@
 package com.app.catalog;
 
+import static com.app.catalog.support.JwtTestSupport.catalogWriteJwt;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -17,10 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collection;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,10 +41,14 @@ class SecurityAccessIntegrationTest {
     @MockitoBean
     private PaymentClient paymentClient;
 
+    @Autowired
+    private Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter;
+
     @BeforeEach
     void restoreStock() {
         Product product = productRepository.findById(1L).orElseThrow();
         product.setUnitsInStock(100);
+        product.setActive(true);
         productRepository.saveAndFlush(product);
     }
 
@@ -60,8 +69,7 @@ class SecurityAccessIntegrationTest {
     @Test
     void checkoutInvalidBodyReturns400() throws Exception {
         mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-1").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-1"))
                 .header("Idempotency-Key", "test-key-invalid-body")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
@@ -85,8 +93,7 @@ class SecurityAccessIntegrationTest {
             """;
 
         mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(jwt().jwt(j -> j.subject("user-ada").claim("scope", "catalog.write"))
-                    .authorities(() -> "SCOPE_catalog.write"))
+                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-ada"))
                 .header("Idempotency-Key", "test-key-checkout-ok")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))

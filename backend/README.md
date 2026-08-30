@@ -9,11 +9,13 @@ Spring Boot 4.1 OAuth2 resource server for Catalog E-Shop products API and check
 ## Access policy
 
 - Public GET: products, categories, countries, states, currency rates
-- JWT + `SCOPE_catalog.write`: `POST /api/v1/checkout/purchase` (and other shopper checkout paths)
+- JWT + `SCOPE_catalog.write`: shopper checkout and account order history (`/api/v1/checkout/**`, `/api/v1/account/orders/**`)
+- JWT + `ROLE_MANAGER` or `ROLE_ADMIN`: manage orders and read customers (`/api/v1/manage/**`)
+- JWT + `ROLE_ADMIN`: customer CRUD (`/api/v1/admin/customers/**`)
 - Shared secret (no JWT): `POST /api/v1/checkout/payment-webhook`
 - Validates issuer and audience (`OAUTH_AUDIENCE`, default `catalog-api`)
 
-Full decision record: [OAuth2 access policy](../docs/oauth2-access-policy.md).
+Manage orders: only `PENDING` → `CANCELLED` via API; `PENDING` orders cannot be deleted; deleting a `PAID` order restores stock first (409 if restore fails). See [OAuth2 access policy](../docs/oauth2-access-policy.md).
 
 ## Profiles
 
@@ -28,7 +30,9 @@ H2 and MariaDB migrations must stay in sync (e.g. V4 order tables, V6 payment se
 
 ```bash
 mvn spring-boot:run
-mvn test
+mvn -B verify   # tests + JaCoCo report; fails below 75% instruction coverage
 ```
+
+📊 JaCoCo gate excludes entities, DTOs, models, config, MapStruct mappers, payment client DTOs, and exception-handler utilities. Minimum **75%** instruction coverage on services/controllers. Report: `target/site/jacoco/index.html`.
 
 Compose sets `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://auth-server:9000/oauth2/jwks` while `AUTH_ISSUER_URI` stays `http://localhost:9000`.
