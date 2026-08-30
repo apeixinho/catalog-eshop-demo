@@ -244,6 +244,7 @@ export class ManageOrdersPage implements OnInit {
         this.orders.update((rows) =>
           rows.map((row) => (row.id === updated.id ? { ...row, status: updated.status } : row)),
         );
+        this.error.set(null);
         this.busyId.set(null);
         this.editingStatusId.set(null);
       },
