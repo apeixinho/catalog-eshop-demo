@@ -91,11 +91,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         Optional<Order> existing = orderRepository.findByCustomerIdAndIdempotencyKey(
             customer.getId(), idempotencyKey.trim());
         if (existing.isPresent()) {
-            Order order = existing.get();
-            if (order.getPaymentUrl() == null || order.getPaymentUrl().isBlank()) {
-                throw new IllegalStateException("Existing order has no payment URL");
-            }
-            return new PurchaseResponse(order.getOrderTrackingNumber(), order.getPaymentUrl());
+            return toExistingPurchaseResponse(existing.get());
         }
 
         String currencyCode = CurrencyRates.normalize(purchase.currencyCode());
@@ -154,8 +150,7 @@ public class CheckoutServiceImpl implements CheckoutService {
             Optional<Order> raced = orderRepository.findByCustomerIdAndIdempotencyKey(
                 customer.getId(), idempotencyKey.trim());
             if (raced.isPresent()) {
-                Order racedOrder = raced.get();
-                return new PurchaseResponse(racedOrder.getOrderTrackingNumber(), racedOrder.getPaymentUrl());
+                return toExistingPurchaseResponse(raced.get());
             }
             throw ex;
         }
@@ -274,6 +269,13 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
 
         throw new IllegalArgumentException("Unsupported payment status: " + request.status());
+    }
+
+    private PurchaseResponse toExistingPurchaseResponse(Order order) {
+        if (order.getPaymentUrl() == null || order.getPaymentUrl().isBlank()) {
+            throw new IllegalStateException("Existing order has no payment URL");
+        }
+        return new PurchaseResponse(order.getOrderTrackingNumber(), order.getPaymentUrl());
     }
 
     private Customer resolveCustomer(CustomerRequest request, String oauthSub) {

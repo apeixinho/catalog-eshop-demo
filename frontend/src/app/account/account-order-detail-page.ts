@@ -1,6 +1,8 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { OrderDetail } from '../shared/models';
@@ -115,32 +117,48 @@ import { OrderDetail } from '../shared/models';
     }
   `,
 })
-export class AccountOrderDetailPage implements OnInit {
+export class AccountOrderDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(CatalogApiService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(LocaleService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly order = signal<OrderDetail | null>(null);
 
-  ngOnInit(): void {
-    const tracking = this.route.snapshot.paramMap.get('trackingNumber');
-    if (!tracking) {
-      this.error.set(this.i18n.t('orders.loadFailed'));
-      this.loading.set(false);
-      return;
-    }
-
-    this.api.getMyOrder(tracking).subscribe({
-      next: (detail) => {
-        this.order.set(detail);
-        this.loading.set(false);
-      },
-      error: () => {
+  constructor() {
+    this.route.paramMap
+      .pipe(
+        tap((params) => {
+          if (params.get('trackingNumber')) {
+            this.loading.set(true);
+            this.error.set(null);
+            this.order.set(null);
+          }
+        }),
+        switchMap((params) => {
+          const tracking = params.get('trackingNumber');
+          if (!tracking) {
+            return of({ status: 'missing' as const });
+          }
+          return this.api.getMyOrder(tracking).pipe(
+            map((detail) => ({ status: 'ok' as const, detail })),
+            catchError(() => of({ status: 'error' as const })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((result) => {
+        if (result.status === 'ok') {
+          this.order.set(result.detail);
+          this.error.set(null);
+          this.loading.set(false);
+          return;
+        }
+        this.order.set(null);
         this.error.set(this.i18n.t('orders.loadFailed'));
         this.loading.set(false);
-      },
-    });
+      });
   }
 }

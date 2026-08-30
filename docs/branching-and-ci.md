@@ -25,10 +25,11 @@ Runs when files under the matching path change (any branch):
 
 | Workflow | Path | Steps |
 |----------|------|-------|
-| Frontend CI | `frontend/**` | `npm ci` → `test:ci` → `build` |
-| Backend CI | `backend/**` | `mvn -B test package` |
+| Frontend CI | `frontend/**` | Vitest (`test:ci`) → build |
+| Backend CI | `backend/**` | `mvn -B verify package` (JaCoCo **≥75%** instruction coverage) |
 | Auth Server CI | `auth-server/**` | `mvn -B test package` |
 | Payment Service CI | `payment-service/**` | `mvn -B test package` |
+| Stack CI | Compose / `e2e/**` paths | Dev/staging Compose smoke; Playwright on `dev` |
 
 Frontend CI uses Node 22 (Angular 22 requires Node ≥ 22.22.3 locally; CI resolves a compatible 22.x).
 
@@ -44,7 +45,7 @@ See [Stack CI workflow](../.github/workflows/stack-ci.yml):
 | PR or push to `staging` / `main` | Always **`Compose staging smoke`** (`compose.staging.yml`, MariaDB + nginx) |
 | Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, …) | Also **`Compose staging smoke`** on any branch |
 
-Smoke = `docker compose up --build --wait`, then curl actuator health, public products API, and the SPA root.
+Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on **`dev`** (locale pinned to US English in the test).
 
 **Required check names** (exact job `name:` values — use these in Rulesets):
 
