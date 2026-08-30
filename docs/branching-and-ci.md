@@ -25,7 +25,7 @@ Runs when files under the matching path change (any branch):
 
 | Workflow | Path | Steps |
 |----------|------|-------|
-| Frontend CI | `frontend/**` | Vitest (`test:ci`) → build |
+| Frontend CI | `frontend/**` | Vitest (`test:ci:coverage`, v8 report artifact) → build |
 | Backend CI | `backend/**` | `mvn -B verify package` (JaCoCo **≥75%** instruction coverage) |
 | Auth Server CI | `auth-server/**` | `mvn -B test package` |
 | Payment Service CI | `payment-service/**` | `mvn -B test package` |

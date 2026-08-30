@@ -15,6 +15,7 @@ describe('CheckoutResultPage', () => {
   let cart: { clearCart: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    sessionStorage.clear();
     auth = {
       ensureValidAccessToken: vi.fn().mockResolvedValue('access-token'),
       login: vi.fn(),
@@ -66,6 +67,32 @@ describe('CheckoutResultPage', () => {
     expect(api.getOrderStatus).not.toHaveBeenCalled();
   });
 
+  it('reads tracking from sessionStorage when query param is absent', async () => {
+    sessionStorage.setItem('catalog.pending.tracking', 'TRK-STORED');
+    api.getOrderStatus.mockReturnValue(
+      of({ orderTrackingNumber: 'TRK-STORED', status: 'PAID' }),
+    );
+
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+    });
+    fixture = TestBed.createComponent(CheckoutResultPage);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await Promise.resolve();
+
+    expect(component.tracking()).toBe('TRK-STORED');
+    expect(sessionStorage.getItem('catalog.pending.tracking')).toBeNull();
+  });
+
+  it('starts login when access token is unavailable', async () => {
+    auth.ensureValidAccessToken.mockResolvedValue(null);
+    await createWithTracking('TRK-LOGIN');
+
+    expect(auth.login).toHaveBeenCalledWith('/checkout/result?tracking=TRK-LOGIN');
+  });
+
   it('shows success and clears cart when order is paid', async () => {
     api.getOrderStatus.mockReturnValue(
       of({ orderTrackingNumber: 'TRK-PAID', status: 'PAID' }),
@@ -87,6 +114,20 @@ describe('CheckoutResultPage', () => {
 
     expect(component.status()).toBe('cancelled');
     expect(cart.clearCart).not.toHaveBeenCalled();
+  });
+
+  it('shows pending after polling exhausts without terminal status', async () => {
+    vi.useFakeTimers();
+    api.getOrderStatus.mockReturnValue(
+      of({ orderTrackingNumber: 'TRK-PEND', status: 'PENDING' }),
+    );
+
+    await createWithTracking('TRK-PEND');
+    await vi.runAllTimersAsync();
+    await Promise.resolve();
+
+    expect(component.status()).toBe('pending');
+    vi.useRealTimers();
   });
 
   it('checkAgain re-queries order status', async () => {

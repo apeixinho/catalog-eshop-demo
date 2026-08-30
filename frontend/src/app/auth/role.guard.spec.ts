@@ -19,7 +19,6 @@ describe('roleGuard', () => {
       ],
     }).compileComponents();
 
-    const router = TestBed.inject(Router);
     const guard = roleGuard(['MANAGER']);
     const result = await TestBed.runInInjectionContext(() =>
       guard({} as never, { url: '/manage/orders' } as never),
@@ -27,6 +26,50 @@ describe('roleGuard', () => {
 
     expect(result).toBe(false);
     expect(auth.login).toHaveBeenCalledWith('/manage/orders');
-    expect(router).toBeTruthy();
+  });
+
+  it('allows navigation when user has a required role', async () => {
+    const auth = {
+      ensureValidAccessToken: vi.fn().mockResolvedValue('token'),
+      login: vi.fn(),
+      hasRole: vi.fn((role: string) => role === 'MANAGER'),
+    };
+
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: auth },
+      ],
+    }).compileComponents();
+
+    const guard = roleGuard(['MANAGER']);
+    const result = await TestBed.runInInjectionContext(() =>
+      guard({} as never, { url: '/manage/orders' } as never),
+    );
+
+    expect(result).toBe(true);
+  });
+
+  it('redirects to products when authenticated but missing role', async () => {
+    const auth = {
+      ensureValidAccessToken: vi.fn().mockResolvedValue('token'),
+      login: vi.fn(),
+      hasRole: vi.fn().mockReturnValue(false),
+    };
+
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'products', redirectTo: '' }]),
+        { provide: AuthService, useValue: auth },
+      ],
+    }).compileComponents();
+
+    const router = TestBed.inject(Router);
+    const guard = roleGuard(['ADMIN']);
+    const result = await TestBed.runInInjectionContext(() =>
+      guard({} as never, { url: '/manage/customers' } as never),
+    );
+
+    expect(result).toEqual(router.parseUrl('/products'));
   });
 });
