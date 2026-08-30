@@ -20,10 +20,15 @@ public class ManageOrderServiceImpl implements ManageOrderService {
 
     private final OrderRepository orderRepository;
     private final OrderStockService orderStockService;
+    private final OrderDetailMapperService orderDetailMapperService;
 
-    public ManageOrderServiceImpl(OrderRepository orderRepository, OrderStockService orderStockService) {
+    public ManageOrderServiceImpl(
+        OrderRepository orderRepository,
+        OrderStockService orderStockService,
+        OrderDetailMapperService orderDetailMapperService) {
         this.orderRepository = orderRepository;
         this.orderStockService = orderStockService;
+        this.orderDetailMapperService = orderDetailMapperService;
     }
 
     @Override
@@ -37,7 +42,7 @@ public class ManageOrderServiceImpl implements ManageOrderService {
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrder(Long id) {
         Order order = findOrder(id);
-        return toDetail(order);
+        return orderDetailMapperService.toDetail(order);
     }
 
     @Override
@@ -48,7 +53,7 @@ public class ManageOrderServiceImpl implements ManageOrderService {
         OrderStatus next = request.status();
 
         if (current == next) {
-            return toDetail(order);
+            return orderDetailMapperService.toDetail(order);
         }
         if (current != OrderStatus.PENDING || next != OrderStatus.CANCELLED) {
             throw new ResponseStatusException(
@@ -58,7 +63,7 @@ public class ManageOrderServiceImpl implements ManageOrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         Order saved = orderRepository.save(order);
-        return toDetail(saved);
+        return orderDetailMapperService.toDetail(saved);
     }
 
     @Override
@@ -74,11 +79,6 @@ public class ManageOrderServiceImpl implements ManageOrderService {
             orderStockService.restoreStockForOrder(order);
         }
         orderRepository.delete(order);
-    }
-
-    private OrderDetailResponse toDetail(Order order) {
-        long orderCount = orderRepository.countByCustomerId(order.getCustomer().getId());
-        return OrderMapper.toDetail(order, orderCount);
     }
 
     private Order findOrder(Long id) {

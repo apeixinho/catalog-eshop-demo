@@ -137,6 +137,18 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.14</version>
+        <configuration>
+          <excludes>
+            <exclude>com/app/catalog/entity/**</exclude>
+            <exclude>com/app/catalog/dto/**</exclude>
+            <exclude>com/app/catalog/model/**</exclude>
+            <exclude>com/app/catalog/CatalogApplication.class</exclude>
+            <exclude>com/app/catalog/config/**</exclude>
+            <exclude>com/app/catalog/mapper/**</exclude>
+            <exclude>com/app/catalog/payment/**</exclude>
+            <exclude>com/app/catalog/utils/**</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <goals>
@@ -149,6 +161,27 @@
             <goals>
               <goal>report</goal>
             </goals>
+          </execution>
+          <execution>
+            <id>check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>INSTRUCTION</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.75</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
           </execution>
         </executions>
       </plugin>

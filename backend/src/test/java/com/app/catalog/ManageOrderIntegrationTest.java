@@ -5,6 +5,7 @@ import static com.app.catalog.support.JwtTestSupport.managerJwt;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -127,6 +128,15 @@ class ManageOrderIntegrationTest {
             .andExpect(status().isNoContent());
 
         assertThat(orderRepository.findById(orderId)).isEmpty();
+    }
+
+    @Test
+    void managerCanGetOrderDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.orderTrackingNumber").value(trackingNumber))
+            .andExpect(jsonPath("$.customer.email").value("manage-order@example.com"));
     }
 
     @Test

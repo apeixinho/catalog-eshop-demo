@@ -97,10 +97,11 @@ Path-filtered workflows (status badges at the top of this file):
 
 | Workflow | Triggers on changes to | Steps |
 |----------|------------------------|-------|
-| ✅ [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | `npm ci` → `npm run test:ci` → `npm run build` |
-| ✅ [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn -B test package` |
+| ✅ [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | Vitest (`test:ci`) → build |
+| 📊 [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn verify package` — JaCoCo **≥75%** instruction coverage (excludes entity/DTO/mapper/config/utils) |
 | ✅ [Auth Server CI](.github/workflows/auth-server.yml) | `auth-server/**` | `mvn -B test package` |
 | ✅ [Payment Service CI](.github/workflows/payment-service.yml) | `payment-service/**` | `mvn -B test package` |
+| 🎭 [Stack CI](.github/workflows/stack-ci.yml) | Compose / e2e paths | Dev Compose smoke + Playwright shopper flow |
 
 > ℹ️ The frontend workflow runs on Node 22 (Angular 22 requires Node ≥ 22.22.3). The JVM services build on Java 21.
 
@@ -114,7 +115,7 @@ Path-filtered workflows (status badges at the top of this file):
 | PR or push to `staging` / `main` | Always `compose.staging.yml` smoke (MariaDB + nginx) |
 | Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `auth-server/init-db/**`, …) | Also `compose.staging.yml` smoke on any branch |
 
-Smoke = `docker compose up --build --wait`, then curl actuator health, public products API, and the SPA root.
+Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on `dev` (locale pinned to US English in the test).
 
 Git branch `staging` is the promotion lane; Compose project `eshop-staging` is the MariaDB runtime profile — Stack CI maps **when** that stack is exercised, it does not host a long-lived environment.
 

@@ -33,6 +33,7 @@ jobs:
             stack:
               - "compose.dev.yml"
               - "compose.staging.yml"
+              - "e2e/**"
               - ".env.example"
               - "auth-server/init-db/**"
               - "**/Dockerfile"
@@ -120,6 +121,24 @@ jobs:
             200|301|302) ;;
             *) echo "unexpected frontend status ${code}"; exit 1 ;;
           esac
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+
+      - name: Playwright smoke (login → products → account orders)
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:4200
+        run: npm test
 
       - name: Tear down dev stack
         if: always()

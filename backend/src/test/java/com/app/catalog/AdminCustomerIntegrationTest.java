@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.app.catalog.entity.Product;
@@ -131,5 +132,36 @@ class AdminCustomerIntegrationTest {
             .andExpect(status().isConflict());
 
         assertThat(orderRepository.countByCustomerId(customerId)).isPositive();
+    }
+
+    @Test
+    void adminCannotUpdateCustomerToDuplicateEmail() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/customers")
+                .with(adminJwt(jwtGrantedAuthoritiesConverter, "admin-dup-update"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"firstName":"One","lastName":"User","email":"dup-update-a@example.com","oauthSub":"sub-dup-a"}
+                    """))
+            .andExpect(status().isCreated());
+
+        MvcResult second = mockMvc.perform(post("/api/v1/admin/customers")
+                .with(adminJwt(jwtGrantedAuthoritiesConverter, "admin-dup-update"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"firstName":"Two","lastName":"User","email":"dup-update-b@example.com","oauthSub":"sub-dup-b"}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        Number id = com.jayway.jsonpath.JsonPath.read(
+            second.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(put("/api/v1/admin/customers/" + id)
+                .with(adminJwt(jwtGrantedAuthoritiesConverter, "admin-dup-update"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"firstName":"Two","lastName":"User","email":"dup-update-a@example.com","oauthSub":"sub-dup-b"}
+                    """))
+            .andExpect(status().isConflict());
     }
 }

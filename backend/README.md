@@ -30,7 +30,9 @@ H2 and MariaDB migrations must stay in sync (e.g. V4 order tables, V6 payment se
 
 ```bash
 mvn spring-boot:run
-mvn test
+mvn -B verify   # tests + JaCoCo report; fails below 75% instruction coverage
 ```
+
+📊 JaCoCo gate excludes entities, DTOs, models, config, MapStruct mappers, payment client DTOs, and exception-handler utilities. Minimum **75%** instruction coverage on services/controllers. Report: `target/site/jacoco/index.html`.
 
 Compose sets `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://auth-server:9000/oauth2/jwks` while `AUTH_ISSUER_URI` stays `http://localhost:9000`.

@@ -12,6 +12,7 @@ describe('ManageOrdersPage', () => {
   let api: {
     listManageOrders: ReturnType<typeof vi.fn>;
     updateManageOrder: ReturnType<typeof vi.fn>;
+    deleteManageOrder: ReturnType<typeof vi.fn>;
   };
 
   const sampleOrder: OrderSummary = {
@@ -30,6 +31,7 @@ describe('ManageOrdersPage', () => {
         .fn()
         .mockReturnValue(of({ content: [sampleOrder] })),
       updateManageOrder: vi.fn(),
+      deleteManageOrder: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -64,6 +66,19 @@ describe('ManageOrdersPage', () => {
     expect(component.error()).toBeNull();
     expect(component.orders()[0].status).toBe('CANCELLED');
     expect(component.editingStatusId()).toBeNull();
+  });
+
+  it('opens confirm dialog for paid delete and deletes on confirm', () => {
+    const paidOrder: OrderSummary = { ...sampleOrder, id: 99, status: 'PAID' };
+    component.orders.set([paidOrder]);
+    api.deleteManageOrder.mockReturnValue(of(void 0));
+
+    component.deleteOrder(paidOrder);
+    expect(component.confirmDeleteOrder()?.id).toBe(99);
+
+    component.performDelete(paidOrder);
+    expect(api.deleteManageOrder).toHaveBeenCalledWith(99);
+    expect(component.orders()).toHaveLength(0);
   });
 
   it('reloads list after failed status save', () => {

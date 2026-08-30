@@ -41,6 +41,12 @@ export const routes: Routes = [
       import('./account/account-orders-page').then((m) => m.AccountOrdersPage),
   },
   {
+    path: 'account/orders/:trackingNumber',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./account/account-order-detail-page').then((m) => m.AccountOrderDetailPage),
+  },
+  {
     path: 'manage/orders',
     canActivate: [authGuard, roleGuard(['MANAGER', 'ADMIN'])],
     loadComponent: () => import('./manage/manage-orders-page').then((m) => m.ManageOrdersPage),
