@@ -3,7 +3,6 @@ package com.app.catalog.entity;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -40,8 +39,8 @@ public class Customer {
     @Column(name = "oauth_sub", nullable = false, unique = true)
     private String oauthSub;
 
-    /** Inverse side only — use {@link OrderRepository} for order counts and history. */
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
+    /** Inverse side only — use {@link com.app.catalog.repository.OrderRepository} for order counts and history. */
+    @OneToMany(mappedBy = "customer")
     private Set<Order> orders = new HashSet<>();
 
     public Long getId() {

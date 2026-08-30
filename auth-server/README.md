@@ -22,6 +22,7 @@ Demo accounts (seed only): `user` / `password`, `manager` / `password`, `admin` 
 - Client: `catalog-spa` (public, PKCE, refresh_token); redirect/post-logout URIs for each comma-separated `FRONTEND_ORIGIN`
 - Audience claim: `catalog-api`
 - Scopes: `openid`, `profile`, `catalog.read`, `catalog.write`
+- Access tokens include a `roles` claim (`USER`, and optionally `MANAGER` or `ADMIN`) plus `preferred_username` for SPA role checks and backend authorization.
 - Signing key: RSA JWK at `catalog.auth.jwk-path` / `AUTH_JWK_PATH` (generated once if missing)
 
 ## Run
