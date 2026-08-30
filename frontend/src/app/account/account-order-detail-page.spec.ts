@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, convertToParamMap, ActivatedRoute } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { AccountOrderDetailPage } from './account-order-detail-page';
 import { CatalogApiService } from '../shared/catalog-api.service';
@@ -9,6 +9,7 @@ import { OrderDetail } from '../shared/models';
 describe('AccountOrderDetailPage', () => {
   let fixture: ComponentFixture<AccountOrderDetailPage>;
   let api: { getMyOrder: ReturnType<typeof vi.fn> };
+  let paramMap$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const detail: OrderDetail = {
     id: 1,
@@ -37,7 +38,13 @@ describe('AccountOrderDetailPage', () => {
     ],
   };
 
-  async function setup(trackingNumber: string): Promise<void> {
+  const detailTwo: OrderDetail = {
+    ...detail,
+    orderTrackingNumber: 'TRK-2',
+  };
+
+  async function setup(trackingNumber: string): Promise<AccountOrderDetailPage> {
+    paramMap$ = new BehaviorSubject(convertToParamMap({ trackingNumber }));
     api = {
       getMyOrder: vi.fn().mockReturnValue(of(detail)),
     };
@@ -49,7 +56,7 @@ describe('AccountOrderDetailPage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            paramMap: of(convertToParamMap({ trackingNumber })),
+            paramMap: paramMap$.asObservable(),
           },
         },
         { provide: CatalogApiService, useValue: api },
@@ -59,16 +66,30 @@ describe('AccountOrderDetailPage', () => {
     fixture = TestBed.createComponent(AccountOrderDetailPage);
     fixture.detectChanges();
     await fixture.whenStable();
+    return fixture.componentInstance;
   }
 
   it('loads order detail for route tracking number', async () => {
-    await setup('TRK-1');
+    const component = await setup('TRK-1');
 
     expect(api.getMyOrder).toHaveBeenCalledWith('TRK-1');
-    expect(fixture.componentInstance.order()?.orderTrackingNumber).toBe('TRK-1');
+    expect(component.order()?.orderTrackingNumber).toBe('TRK-1');
+  });
+
+  it('reloads when tracking route param changes', async () => {
+    const component = await setup('TRK-1');
+    api.getMyOrder.mockClear();
+    api.getMyOrder.mockReturnValue(of(detailTwo));
+
+    paramMap$.next(convertToParamMap({ trackingNumber: 'TRK-2' }));
+    await fixture.whenStable();
+
+    expect(api.getMyOrder).toHaveBeenCalledWith('TRK-2');
+    expect(component.order()?.orderTrackingNumber).toBe('TRK-2');
   });
 
   it('shows error when detail load fails', async () => {
+    paramMap$ = new BehaviorSubject(convertToParamMap({ trackingNumber: 'TRK-404' }));
     api = {
       getMyOrder: vi.fn().mockReturnValue(throwError(() => new Error('fail'))),
     };
@@ -80,7 +101,7 @@ describe('AccountOrderDetailPage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            paramMap: of(convertToParamMap({ trackingNumber: 'TRK-404' })),
+            paramMap: paramMap$.asObservable(),
           },
         },
         { provide: CatalogApiService, useValue: api },

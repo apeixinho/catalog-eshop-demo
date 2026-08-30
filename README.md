@@ -97,7 +97,7 @@ Path-filtered workflows (status badges at the top of this file):
 
 | Workflow | Triggers on changes to | Steps |
 |----------|------------------------|-------|
-| ✅ [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | Vitest (`test:ci`) → build |
+| 📊 [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | Vitest (`test:ci:coverage`, v8 report) → build |
 | 📊 [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn verify package` — JaCoCo **≥75%** instruction coverage (excludes entity/DTO/mapper/config/utils) |
 | ✅ [Auth Server CI](.github/workflows/auth-server.yml) | `auth-server/**` | `mvn -B test package` |
 | ✅ [Payment Service CI](.github/workflows/payment-service.yml) | `payment-service/**` | `mvn -B test package` |
