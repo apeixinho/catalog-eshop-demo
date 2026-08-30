@@ -65,6 +65,11 @@ public class ManageOrderServiceImpl implements ManageOrderService {
     @Transactional
     public void deleteOrder(Long id) {
         Order order = findOrder(id);
+        if (order.getStatus() == OrderStatus.PENDING) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Pending orders awaiting payment cannot be deleted; cancel first");
+        }
         if (order.getStatus() == OrderStatus.PAID) {
             orderStockService.restoreStockForOrder(order);
         }

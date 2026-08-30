@@ -106,6 +106,30 @@ class ManageOrderIntegrationTest {
     }
 
     @Test
+    void managerCannotDeletePendingOrder() throws Exception {
+        mockMvc.perform(delete("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+            .andExpect(status().isConflict());
+
+        assertThat(orderRepository.findById(orderId)).isPresent();
+    }
+
+    @Test
+    void deleteCancelledOrderAllowed() throws Exception {
+        mockMvc.perform(put("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"CANCELLED\"}"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+            .andExpect(status().isNoContent());
+
+        assertThat(orderRepository.findById(orderId)).isEmpty();
+    }
+
+    @Test
     void managerCanCancelPendingOrder() throws Exception {
         mockMvc.perform(put("/api/v1/manage/orders/" + orderId)
                 .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1"))
@@ -160,6 +184,26 @@ class ManageOrderIntegrationTest {
         assertThat(orderRepository.findById(orderId)).isPresent();
         assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
             .isEqualTo(stockAfterPayment);
+    }
+
+    @Test
+    void latePaymentWebhookRejectedAfterCancel() throws Exception {
+        mockMvc.perform(put("/api/v1/manage/orders/" + orderId)
+                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"CANCELLED\"}"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/checkout/payment-webhook")
+                .header("X-Payment-Secret", "dev-payment-secret")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"sessionId":"%s","status":"SUCCEEDED","orderTrackingNumber":"%s"}
+                    """.formatted(paymentSessionId, trackingNumber)))
+            .andExpect(status().isConflict());
+
+        assertThat(orderRepository.findById(orderId).orElseThrow().getStatus())
+            .isEqualTo(OrderStatus.CANCELLED);
     }
 
     private void payOrder() throws Exception {

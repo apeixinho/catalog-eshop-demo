@@ -263,6 +263,7 @@ export class ManageCustomersPage implements OnInit {
     this.api.listManageCustomers().subscribe({
       next: (page) => {
         this.customers.set(page.content ?? []);
+        this.error.set(null);
         this.loading.set(false);
       },
       error: () => {

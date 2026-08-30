@@ -8,7 +8,6 @@ import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
 
 type ResultStatus = 'loading' | 'success' | 'cancelled' | 'failed' | 'pending';
-type RedirectHint = 'success' | 'cancelled' | 'failed';
 type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED';
 
 const MAX_POLL_ATTEMPTS = 24;
@@ -52,9 +51,19 @@ const MAX_DELAY_MS = 3000;
             <p class="tracking-value">{{ tracking() }}</p>
           </div>
         }
-        <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{
-          i18n.t('checkout.continue')
-        }}</a>
+        <div class="actions">
+          <button
+            type="button"
+            class="quiet-btn"
+            (click)="checkAgain()"
+            [disabled]="rechecking()"
+          >
+            {{ i18n.t('checkout.checkAgain') }}
+          </button>
+          <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{
+            i18n.t('checkout.continue')
+          }}</a>
+        </div>
       } @else {
         <h1>{{ i18n.t('checkout.paymentFailedTitle') }}</h1>
         <p class="lead">{{ i18n.t('checkout.paymentFailedBody') }}</p>
@@ -108,6 +117,13 @@ const MAX_DELAY_MS = 3000;
       letter-spacing: 0.06em;
     }
 
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
     a {
       display: inline-block;
       text-decoration: none;
@@ -123,6 +139,7 @@ export class CheckoutResultPage implements OnInit {
 
   readonly status = signal<ResultStatus>('loading');
   readonly tracking = signal<string | null>(null);
+  readonly rechecking = signal(false);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
@@ -135,15 +152,23 @@ export class CheckoutResultPage implements OnInit {
       return;
     }
 
-    const hint = parseRedirectHint(params.get('status'));
     this.tracking.set(tracking);
-    void this.resolveStatus(tracking, hint);
+    void this.resolveStatus(tracking);
   }
 
-  private async resolveStatus(tracking: string, hint: RedirectHint | null): Promise<void> {
+  checkAgain(): void {
+    const tracking = this.tracking();
+    if (!tracking || this.rechecking()) {
+      return;
+    }
+    this.rechecking.set(true);
+    void this.resolveStatus(tracking).finally(() => this.rechecking.set(false));
+  }
+
+  private async resolveStatus(tracking: string): Promise<void> {
     const token = await this.auth.ensureValidAccessToken();
     if (!token) {
-      void this.auth.login(this.buildReturnUrl(tracking, hint));
+      void this.auth.login(this.buildReturnUrl(tracking));
       return;
     }
 
@@ -160,7 +185,7 @@ export class CheckoutResultPage implements OnInit {
         return;
       }
       if (apiStatus === 'unauthorized') {
-        void this.auth.login(this.buildReturnUrl(tracking, hint));
+        void this.auth.login(this.buildReturnUrl(tracking));
         return;
       } else if (apiStatus === 'not_found') {
         this.status.set('failed');
@@ -195,24 +220,9 @@ export class CheckoutResultPage implements OnInit {
     }
   }
 
-  private buildReturnUrl(tracking: string, hint: RedirectHint | null): string {
-    const params = new URLSearchParams({ tracking });
-    if (hint) {
-      params.set('status', hint);
-    }
-    return `/checkout/result?${params.toString()}`;
+  private buildReturnUrl(tracking: string): string {
+    return `/checkout/result?tracking=${encodeURIComponent(tracking)}`;
   }
-}
-
-function parseRedirectHint(raw: string | null): RedirectHint | null {
-  if (!raw) {
-    return null;
-  }
-  const value = raw.toLowerCase();
-  if (value === 'success' || value === 'cancelled' || value === 'failed') {
-    return value;
-  }
-  return null;
 }
 
 function sleep(ms: number): Promise<void> {
