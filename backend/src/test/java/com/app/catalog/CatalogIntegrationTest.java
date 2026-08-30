@@ -58,4 +58,35 @@ class CatalogIntegrationTest {
             .andExpect(jsonPath("$.length()").value(4))
             .andExpect(jsonPath("$[?(@.categoryName=='Books')]").exists());
     }
+
+    @Test
+    void getProductByIdReturnsActiveProduct() throws Exception {
+        mockMvc.perform(get("/api/v1/products/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Crash Course in Python"));
+    }
+
+    @Test
+    void getProductByIdReturns404WhenMissing() throws Exception {
+        mockMvc.perform(get("/api/v1/products/99999"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getCountriesAndStatesArePublic() throws Exception {
+        mockMvc.perform(get("/api/v1/countries"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.code=='PT')]").exists());
+
+        mockMvc.perform(get("/api/v1/states/search/findByCountryCode").param("code", "PT"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThan(0)));
+    }
+
+    @Test
+    void currencyRatesArePublic() throws Exception {
+        mockMvc.perform(get("/api/v1/currency/rates"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.USD").value(1.0));
+    }
 }

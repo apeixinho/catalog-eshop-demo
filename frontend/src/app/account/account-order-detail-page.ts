@@ -1,46 +1,46 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
-import { OrderSummary } from '../shared/models';
+import { OrderDetail } from '../shared/models';
 
 @Component({
-  selector: 'app-account-orders-page',
+  selector: 'app-account-order-detail-page',
   imports: [RouterLink, DecimalPipe],
   template: `
     <section class="page view-enter page-shell">
       <p class="eyebrow">{{ i18n.t('nav.account') }}</p>
-      <h1>{{ i18n.t('orders.title') }}</h1>
+      <h1>{{ i18n.t('orders.detailTitle') }}</h1>
 
       @if (loading()) {
         <p class="muted">{{ i18n.t('orders.loading') }}</p>
       } @else if (error()) {
         <p class="error">{{ error() }}</p>
-      } @else if (orders().length === 0) {
-        <p class="muted">{{ i18n.t('orders.empty') }}</p>
-      } @else {
+      } @else if (order(); as detail) {
+        <div class="summary">
+          <p class="mono">{{ detail.orderTrackingNumber }}</p>
+          <p>{{ i18n.t('orders.status.' + detail.status) }}</p>
+          <p>
+            {{ detail.totalPrice | number: '1.2-2' }} {{ detail.currencyCode }}
+          </p>
+        </div>
+
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>{{ i18n.t('checkout.tracking') }}</th>
-                <th>{{ i18n.t('orders.status') }}</th>
-                <th>{{ i18n.t('checkout.total') }}</th>
-                <th>{{ i18n.t('orders.date') }}</th>
+                <th>{{ i18n.t('orders.product') }}</th>
+                <th>{{ i18n.t('checkout.quantity') }}</th>
+                <th>{{ i18n.t('checkout.unitPrice') }}</th>
               </tr>
             </thead>
             <tbody>
-              @for (order of orders(); track order.orderTrackingNumber) {
+              @for (item of detail.items; track item.productId) {
                 <tr>
-                  <td class="mono">
-                    <a [routerLink]="['/account/orders', order.orderTrackingNumber]">{{
-                      order.orderTrackingNumber
-                    }}</a>
-                  </td>
-                  <td>{{ i18n.t('orders.status.' + order.status) }}</td>
-                  <td>{{ order.totalPrice | number: '1.2-2' }} {{ order.currencyCode }}</td>
-                  <td>{{ formatDate(order.dateCreated) }}</td>
+                  <td>#{{ item.productId }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.unitPrice | number: '1.2-2' }} {{ detail.currencyCode }}</td>
                 </tr>
               }
             </tbody>
@@ -48,8 +48,8 @@ import { OrderSummary } from '../shared/models';
         </div>
       }
 
-      <a routerLink="/products" class="quiet-btn quiet-btn--outline back">{{
-        i18n.t('account.back')
+      <a routerLink="/account/orders" class="quiet-btn quiet-btn--outline back">{{
+        i18n.t('orders.backToList')
       }}</a>
     </section>
   `,
@@ -74,6 +74,12 @@ import { OrderSummary } from '../shared/models';
       color: var(--muted);
     }
 
+    .summary {
+      margin-bottom: 2rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
     .table-wrap {
       overflow-x: auto;
       margin-bottom: 2rem;
@@ -83,7 +89,6 @@ import { OrderSummary } from '../shared/models';
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.95rem;
     }
 
     th,
@@ -98,21 +103,10 @@ import { OrderSummary } from '../shared/models';
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--muted);
-      background: color-mix(in srgb, var(--border) 35%, transparent);
     }
 
     .mono {
       font-family: var(--font-mono);
-      font-size: 0.85rem;
-    }
-
-    .muted,
-    .error {
-      margin-bottom: 1.5rem;
-    }
-
-    .error {
-      color: var(--danger, #b42318);
     }
 
     .back {
@@ -121,18 +115,26 @@ import { OrderSummary } from '../shared/models';
     }
   `,
 })
-export class AccountOrdersPage implements OnInit {
+export class AccountOrderDetailPage implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   private readonly api = inject(CatalogApiService);
   readonly i18n = inject(LocaleService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
-  readonly orders = signal<OrderSummary[]>([]);
+  readonly order = signal<OrderDetail | null>(null);
 
   ngOnInit(): void {
-    this.api.listMyOrders().subscribe({
-      next: (page) => {
-        this.orders.set(page.content ?? []);
+    const tracking = this.route.snapshot.paramMap.get('trackingNumber');
+    if (!tracking) {
+      this.error.set(this.i18n.t('orders.loadFailed'));
+      this.loading.set(false);
+      return;
+    }
+
+    this.api.getMyOrder(tracking).subscribe({
+      next: (detail) => {
+        this.order.set(detail);
         this.loading.set(false);
       },
       error: () => {
@@ -140,9 +142,5 @@ export class AccountOrdersPage implements OnInit {
         this.loading.set(false);
       },
     });
-  }
-
-  formatDate(value: string): string {
-    return new Date(value).toLocaleString(this.i18n.language());
   }
 }

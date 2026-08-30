@@ -109,6 +109,26 @@ import { OrderStatus, OrderSummary } from '../shared/models';
         i18n.t('account.back')
       }}</a>
     </section>
+
+    @if (confirmDeleteOrder(); as pendingDelete) {
+      <div class="confirm-backdrop" role="dialog" aria-modal="true">
+        <div class="confirm-panel">
+          <p>{{ i18n.t('manage.confirmDeletePaid') }}</p>
+          <div class="confirm-actions">
+            <button type="button" class="quiet-btn" (click)="performDelete(pendingDelete)">
+              {{ i18n.t('manage.delete') }}
+            </button>
+            <button
+              type="button"
+              class="quiet-btn quiet-btn--outline"
+              (click)="confirmDeleteOrder.set(null)"
+            >
+              {{ i18n.t('manage.cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .page {
@@ -182,6 +202,31 @@ import { OrderStatus, OrderSummary } from '../shared/models';
       display: inline-block;
       text-decoration: none;
     }
+
+    .confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgb(0 0 0 / 45%);
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .confirm-panel {
+      width: min(28rem, 100%);
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      box-shadow: 0 12px 40px rgb(0 0 0 / 18%);
+    }
+
+    .confirm-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
   `,
 })
 export class ManageOrdersPage implements OnInit {
@@ -195,6 +240,7 @@ export class ManageOrdersPage implements OnInit {
   readonly orders = signal<OrderSummary[]>([]);
   readonly busyId = signal<number | null>(null);
   readonly editingStatusId = signal<number | null>(null);
+  readonly confirmDeleteOrder = signal<OrderSummary | null>(null);
   draftStatus: OrderStatus = 'PENDING';
 
   ngOnInit(): void {
@@ -257,12 +303,15 @@ export class ManageOrdersPage implements OnInit {
   }
 
   deleteOrder(order: OrderSummary): void {
-    if (
-      order.status === 'PAID' &&
-      !window.confirm(this.i18n.t('manage.confirmDeletePaid'))
-    ) {
+    if (order.status === 'PAID') {
+      this.confirmDeleteOrder.set(order);
       return;
     }
+    this.performDelete(order);
+  }
+
+  performDelete(order: OrderSummary): void {
+    this.confirmDeleteOrder.set(null);
     this.busyId.set(order.id);
     this.api.deleteManageOrder(order.id).subscribe({
       next: () => {
