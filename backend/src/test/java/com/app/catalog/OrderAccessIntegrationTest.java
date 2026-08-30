@@ -102,6 +102,20 @@ class OrderAccessIntegrationTest {
     }
 
     @Test
+    void userCanGetOwnOrderDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/account/orders/" + trackingNumber).with(userJwt("user-order-access")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.orderTrackingNumber").value(trackingNumber))
+            .andExpect(jsonPath("$.customer.email").value("ada-order-access@example.com"));
+    }
+
+    @Test
+    void userCannotGetOthersOrderDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/account/orders/" + trackingNumber).with(userJwt("other-user")))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void userCannotAccessManageOrders() throws Exception {
         mockMvc.perform(get("/api/v1/manage/orders").with(userJwt("user-order-access")))
             .andExpect(status().isForbidden());
