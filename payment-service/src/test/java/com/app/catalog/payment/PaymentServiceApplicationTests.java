@@ -81,7 +81,8 @@ class PaymentServiceApplicationTests {
 
         mockMvc.perform(post("/checkout/" + sessionId + "/pay"))
             .andExpect(status().isFound())
-            .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("status=success")));
+            .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("tracking=t-2")))
+            .andExpect(header().string("Location", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("status="))));
 
         MvcResult createdCancel = mockMvc.perform(post("/api/v1/sessions")
                 .header("X-Payment-Secret", "dev-payment-secret")
@@ -103,6 +104,7 @@ class PaymentServiceApplicationTests {
 
         mockMvc.perform(post("/checkout/" + cancelSessionId + "/cancel"))
             .andExpect(status().isFound())
-            .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("status=cancelled")));
+            .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("tracking=t-3")))
+            .andExpect(header().string("Location", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("status="))));
     }
 }

@@ -36,9 +36,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class CheckoutServiceImpl implements CheckoutService {
@@ -191,7 +190,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public OrderStatusResponse getOrderStatus(String orderTrackingNumber, String oauthSub) {
         if (orderTrackingNumber == null || orderTrackingNumber.isBlank()) {
             throw new IllegalArgumentException("Order tracking number is required");
