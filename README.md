@@ -49,7 +49,9 @@ cd frontend && npm start
 
 Demo logins (local/dev/staging seed only): `user` / `password`, `manager` / `password`, `admin` / `password`.
 
-Catalog GETs are public (`?lang=` for translated names). Checkout requires PKCE login and scope `catalog.write`, plus an `Idempotency-Key` header. The API binds the order to the JWT `sub`, builds lines from `{productId, quantity}`, prices from catalog USD × fixed FX rates for `currencyCode`, upserts the customer by oauth subject, and creates a **PENDING** order without decrementing stock. The SPA redirects to the hosted payment page; after Pay, a signed webhook decrements stock and sets `PAID` (or `CANCELLED` on cancel / stock failure).
+Catalog GETs are public (`?lang=` for translated names). Checkout requires PKCE login and scope `catalog.write`, plus an `Idempotency-Key` header. Authenticated shoppers can view order history at `/account/orders`. Users with `MANAGER` or `ADMIN` roles can manage orders and view customers at `/manage/*`; admins can create/edit/delete customers on `/manage/customers`.
+
+The API binds the order to the JWT `sub`, builds lines from `{productId, quantity}`, prices from catalog USD × fixed FX rates for `currencyCode`, upserts the customer by oauth subject, and creates a **PENDING** order without decrementing stock. The SPA redirects to the hosted payment page; after Pay, a signed webhook decrements stock and sets `PAID` (or `CANCELLED` on cancel / stock failure).
 
 ## Docker Compose
 
@@ -126,5 +128,5 @@ See [Branching and CI](docs/branching-and-ci.md) for the `dev` → `staging` →
 - [Branching and CI](docs/branching-and-ci.md) — `dev` → `staging` → `main`, GitHub Rulesets, Dependabot
 - [OAuth2 access policy](docs/oauth2-access-policy.md) — resource server access (catalog, checkout JWT, payment webhook)
 - [Dev and staging environments](docs/dev-and-staging-environments.md) — Compose, MariaDB, Flyway, JWK, payment env
-- [Catalog API OpenAPI](docs/catalog-api.openapi.yaml) — catalog, checkout purchase, order status, payment webhook
+- [Catalog API OpenAPI](docs/catalog-api.openapi.yaml) — catalog, checkout, account/manage/admin APIs, payment webhook
 - [Mock payment service](payment-service/README.md) — hosted checkout and webhook

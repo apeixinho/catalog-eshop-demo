@@ -90,7 +90,10 @@ import { OrderStatus, OrderSummary } from '../shared/models';
                       type="button"
                       class="quiet-btn quiet-btn--outline"
                       (click)="deleteOrder(order)"
-                      [disabled]="busyId() === order.id"
+                      [disabled]="busyId() === order.id || order.status === 'PENDING'"
+                      [attr.title]="
+                        order.status === 'PENDING' ? i18n.t('manage.deletePendingHint') : null
+                      "
                     >
                       {{ i18n.t('manage.delete') }}
                     </button>
@@ -268,6 +271,7 @@ export class ManageOrdersPage implements OnInit {
       error: () => {
         this.error.set(this.i18n.t('manage.deleteFailed'));
         this.busyId.set(null);
+        this.reload(false);
       },
     });
   }

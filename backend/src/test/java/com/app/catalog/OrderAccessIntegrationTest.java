@@ -63,7 +63,8 @@ class OrderAccessIntegrationTest {
 
         when(paymentClient.createSession(any()))
             .thenReturn(new CreatePaymentSessionResponse(
-                "sess-order-access", "http://localhost:8091/checkout/sess-order-access"));
+                "sess-order-access-" + System.nanoTime(),
+                "http://localhost:8091/checkout/sess-order-access"));
 
         String body = """
             {
@@ -77,7 +78,7 @@ class OrderAccessIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/v1/checkout/purchase")
                 .with(userJwt("user-order-access"))
-                .header("Idempotency-Key", "order-access-key")
+                .header("Idempotency-Key", "order-access-key-" + System.nanoTime())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk())

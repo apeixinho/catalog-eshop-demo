@@ -81,7 +81,8 @@ const en: TranslationDict = {
     'Stock may no longer be available, or payment failed. Your cart is unchanged.',
   'checkout.pendingTitle': 'Payment still processing',
   'checkout.pendingBody':
-    'Your bank may still be confirming payment. Check your email for a receipt, or contact support with your tracking number.',
+    'We could not confirm the final status yet. If you cancelled or closed the payment page, check again in a moment — or use the button below to refresh.',
+  'checkout.checkAgain': 'Check payment status',
   'checkout.tryAgain': 'Return to checkout',
   'account.title': 'User details',
   'account.username': 'Username',
@@ -117,6 +118,7 @@ const en: TranslationDict = {
   'manage.deleteFailed': 'Delete failed.',
   'manage.confirmDeletePaid':
     'Delete this paid order? Product stock will be restored before removal.',
+  'manage.deletePendingHint': 'Cancel the order before deleting while payment is pending.',
   'auth.signingIn': 'Signing you in…',
   'auth.error.generic': 'Sign-in failed. Please try again.',
   'auth.error.access_denied': 'Sign-in was cancelled or denied.',
@@ -217,7 +219,8 @@ const pt: TranslationDict = {
     'O stock pode já não estar disponível, ou o pagamento falhou. O carrinho mantém-se.',
   'checkout.pendingTitle': 'Pagamento ainda em processamento',
   'checkout.pendingBody':
-    'O seu banco pode ainda estar a confirmar o pagamento. Verifique o email ou contacte o suporte com o número de seguimento.',
+    'Ainda não foi possível confirmar o estado final. Se cancelou ou fechou a página de pagamento, aguarde um momento — ou use o botão abaixo para atualizar.',
+  'checkout.checkAgain': 'Verificar estado do pagamento',
   'checkout.tryAgain': 'Voltar ao checkout',
   'account.title': 'Detalhes da conta',
   'account.username': 'Nome de utilizador',
@@ -253,6 +256,8 @@ const pt: TranslationDict = {
   'manage.deleteFailed': 'Falha ao eliminar.',
   'manage.confirmDeletePaid':
     'Eliminar esta encomenda paga? O stock será reposto antes da remoção.',
+  'manage.deletePendingHint':
+    'Cancele a encomenda antes de eliminar enquanto o pagamento está pendente.',
   'auth.signingIn': 'A iniciar sessão…',
   'auth.error.generic': 'Falha na autenticação. Tente novamente.',
   'auth.error.access_denied': 'Autenticação cancelada ou recusada.',
@@ -353,7 +358,8 @@ const de: TranslationDict = {
     'Der Bestand ist möglicherweise nicht mehr verfügbar, oder die Zahlung ist fehlgeschlagen. Der Warenkorb bleibt erhalten.',
   'checkout.pendingTitle': 'Zahlung wird noch verarbeitet',
   'checkout.pendingBody':
-    'Ihre Bank bestätigt die Zahlung möglicherweise noch. Prüfen Sie Ihre E-Mail oder wenden Sie sich mit der Sendungsnummer an den Support.',
+    'Der endgültige Status konnte noch nicht bestätigt werden. Wenn Sie abgebrochen haben, warten Sie einen Moment — oder nutzen Sie die Schaltfläche unten zum Aktualisieren.',
+  'checkout.checkAgain': 'Zahlungsstatus prüfen',
   'checkout.tryAgain': 'Zurück zur Kasse',
   'account.title': 'Kontodetails',
   'account.username': 'Benutzername',
@@ -389,6 +395,8 @@ const de: TranslationDict = {
   'manage.deleteFailed': 'Löschen fehlgeschlagen.',
   'manage.confirmDeletePaid':
     'Diese bezahlte Bestellung löschen? Der Lagerbestand wird vor dem Entfernen wiederhergestellt.',
+  'manage.deletePendingHint':
+    'Stornieren Sie die Bestellung, bevor Sie sie bei ausstehender Zahlung löschen.',
   'auth.signingIn': 'Anmeldung läuft…',
   'auth.error.generic': 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
   'auth.error.access_denied': 'Anmeldung wurde abgebrochen oder verweigert.',
@@ -489,7 +497,8 @@ const tr: TranslationDict = {
     'Stok kalmamış olabilir veya ödeme başarısız oldu. Sepetiniz aynı kaldı.',
   'checkout.pendingTitle': 'Ödeme hâlâ işleniyor',
   'checkout.pendingBody':
-    'Bankanız ödemeyi hâlâ onaylıyor olabilir. E-postanızı kontrol edin veya takip numaranızla destekle iletişime geçin.',
+    'Nihai durum henüz doğrulanamadı. İptal ettiyseniz veya ödeme sayfasını kapattıysanız biraz bekleyin — veya aşağıdaki düğmeyle yenileyin.',
+  'checkout.checkAgain': 'Ödeme durumunu kontrol et',
   'checkout.tryAgain': 'Ödemeye dön',
   'account.title': 'Hesap bilgileri',
   'account.username': 'Kullanıcı adı',
@@ -525,6 +534,8 @@ const tr: TranslationDict = {
   'manage.deleteFailed': 'Silme başarısız.',
   'manage.confirmDeletePaid':
     'Bu ödenmiş sipariş silinsin mi? Kaldırmadan önce stok geri yüklenecek.',
+  'manage.deletePendingHint':
+    'Ödeme beklerken silmeden önce siparişi iptal edin.',
   'auth.signingIn': 'Giriş yapılıyor…',
   'auth.error.generic': 'Giriş başarısız. Lütfen tekrar deneyin.',
   'auth.error.access_denied': 'Giriş iptal edildi veya reddedildi.',

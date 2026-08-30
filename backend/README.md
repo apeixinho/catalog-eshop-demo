@@ -15,7 +15,7 @@ Spring Boot 4.1 OAuth2 resource server for Catalog E-Shop products API and check
 - Shared secret (no JWT): `POST /api/v1/checkout/payment-webhook`
 - Validates issuer and audience (`OAUTH_AUDIENCE`, default `catalog-api`)
 
-Manage orders: only `PENDING` → `CANCELLED` via API; deleting a `PAID` order restores stock first (409 if restore fails). See [OAuth2 access policy](../docs/oauth2-access-policy.md).
+Manage orders: only `PENDING` → `CANCELLED` via API; `PENDING` orders cannot be deleted; deleting a `PAID` order restores stock first (409 if restore fails). See [OAuth2 access policy](../docs/oauth2-access-policy.md).
 
 ## Profiles
 

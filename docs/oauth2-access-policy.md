@@ -28,6 +28,7 @@ The luv2shop reference backend has no Spring Security. We need an in-repo identi
 
 - **Manual status updates** (`PUT /api/v1/manage/orders/{id}`): only `PENDING` → `CANCELLED` is permitted. Marking an order `PAID` manually returns **409 Conflict**; payment finalization must go through `POST /api/v1/checkout/payment-webhook`.
 - **Delete paid orders** (`DELETE /api/v1/manage/orders/{id}`): when status is `PAID`, product stock is restored for each line item before the order row is removed. If stock cannot be restored (e.g. product inactive), the delete fails with **409** and the order remains.
+- **Delete pending orders**: rejected with **409** while status is `PENDING` (payment may still complete via webhook). Cancel first (`PENDING` → `CANCELLED`), then delete if needed.
 - **Customer delete guard**: admin delete is rejected with **409** when the customer still has orders (counted via repository, not lazy-loaded collections).
 
 ## Consequences

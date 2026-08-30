@@ -4,9 +4,8 @@ info:
   version: 1.0.0
   description: >
     Catalog and currency rates are public (`lang` selects translation locale with English fallback).
-    Checkout purchase requires Bearer JWT with scope catalog.write and an Idempotency-Key header.
-    Authenticated shoppers can poll GET /api/v1/checkout/orders/{trackingNumber} for payment status.
-    Catalog unit prices are USD; checkout converts with fixed rates for currencyCode.
+    Checkout and account order history require Bearer JWT with scope catalog.write.
+    Manage orders and read customers require ROLE_MANAGER or ROLE_ADMIN; customer CRUD requires ROLE_ADMIN.
     Orders start PENDING; stock is decremented when payment-service calls the payment webhook
     with header X-Payment-Secret (no JWT).
 servers:
@@ -307,8 +306,8 @@ paths:
     delete:
       summary: Delete order (restores stock when PAID)
       description: >
-        Deleting a PAID order restores product stock before removal. Returns 409 if stock
-        cannot be restored (e.g. product inactive).
+        PENDING orders cannot be deleted (409) — cancel first. Deleting a PAID order restores
+        product stock before removal. Returns 409 if stock cannot be restored (e.g. product inactive).
       security:
         - bearerAuth: []
       parameters:
@@ -326,7 +325,7 @@ paths:
         '404':
           description: Unknown order
         '409':
-          description: Could not restore stock for a line item
+          description: Pending order, invalid transition, or could not restore stock
   /api/v1/manage/customers:
     get:
       summary: List customers (manager or admin)
@@ -493,3 +492,55 @@ components:
         status:
           type: string
           enum: [PENDING, PAID, CANCELLED]
+    CustomerUpsertRequest:
+      type: object
+      required: [firstName, lastName, email, oauthSub]
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        oauthSub: { type: string }
+    CustomerSummary:
+      type: object
+      required: [id, firstName, lastName, email, orderCount]
+      properties:
+        id: { type: integer, format: int64 }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        orderCount: { type: integer, format: int64 }
+    OrderSummary:
+      type: object
+      required: [id, orderTrackingNumber, status, totalPrice, currencyCode, totalQuantity, dateCreated]
+      properties:
+        id: { type: integer, format: int64 }
+        orderTrackingNumber: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PAID, CANCELLED]
+        totalPrice: { type: number, format: double }
+        currencyCode: { type: string }
+        totalQuantity: { type: integer }
+        dateCreated: { type: string, format: date-time }
+    PageOrderSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+        number: { type: integer }
+        size: { type: integer }
+    PageCustomerSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerSummary'
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+        number: { type: integer }
+        size: { type: integer }
