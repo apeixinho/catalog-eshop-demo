@@ -37,7 +37,7 @@ describe('AccountOrderDetailPage', () => {
     ],
   };
 
-  beforeEach(async () => {
+  async function setup(trackingNumber: string): Promise<void> {
     api = {
       getMyOrder: vi.fn().mockReturnValue(of(detail)),
     };
@@ -49,7 +49,7 @@ describe('AccountOrderDetailPage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { paramMap: convertToParamMap({ trackingNumber: 'TRK-1' }) },
+            paramMap: of(convertToParamMap({ trackingNumber })),
           },
         },
         { provide: CatalogApiService, useValue: api },
@@ -58,17 +58,21 @@ describe('AccountOrderDetailPage', () => {
 
     fixture = TestBed.createComponent(AccountOrderDetailPage);
     fixture.detectChanges();
-  });
+    await fixture.whenStable();
+  }
 
-  it('loads order detail for route tracking number', () => {
+  it('loads order detail for route tracking number', async () => {
+    await setup('TRK-1');
+
     expect(api.getMyOrder).toHaveBeenCalledWith('TRK-1');
     expect(fixture.componentInstance.order()?.orderTrackingNumber).toBe('TRK-1');
   });
 
   it('shows error when detail load fails', async () => {
-    api.getMyOrder.mockReturnValue(throwError(() => new Error('fail')));
+    api = {
+      getMyOrder: vi.fn().mockReturnValue(throwError(() => new Error('fail'))),
+    };
 
-    await TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [AccountOrderDetailPage],
       providers: [
@@ -76,7 +80,7 @@ describe('AccountOrderDetailPage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { paramMap: convertToParamMap({ trackingNumber: 'TRK-404' }) },
+            paramMap: of(convertToParamMap({ trackingNumber: 'TRK-404' })),
           },
         },
         { provide: CatalogApiService, useValue: api },
@@ -85,6 +89,7 @@ describe('AccountOrderDetailPage', () => {
 
     fixture = TestBed.createComponent(AccountOrderDetailPage);
     fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(fixture.componentInstance.error()).not.toBeNull();
   });
