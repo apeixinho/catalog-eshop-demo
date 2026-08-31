@@ -3,13 +3,16 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { OrderDetail } from '../shared/models';
 
 @Component({
   selector: 'app-account-order-detail-page',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, DecimalPipe, MatButtonModule, MatCardModule, MatTableModule],
   template: `
     <section class="page view-enter page-shell">
       <p class="eyebrow">{{ i18n.t('nav.account') }}</p>
@@ -20,37 +23,40 @@ import { OrderDetail } from '../shared/models';
       } @else if (error()) {
         <p class="error">{{ error() }}</p>
       } @else if (order(); as detail) {
-        <div class="summary">
-          <p class="mono">{{ detail.orderTrackingNumber }}</p>
-          <p>{{ i18n.t('orders.status.' + detail.status) }}</p>
-          <p>
-            {{ detail.totalPrice | number: '1.2-2' }} {{ detail.currencyCode }}
-          </p>
-        </div>
+        <mat-card class="summary">
+          <mat-card-content>
+            <p class="mono">{{ detail.orderTrackingNumber }}</p>
+            <p>{{ i18n.t('orders.status.' + detail.status) }}</p>
+            <p>{{ detail.totalPrice | number: '1.2-2' }} {{ detail.currencyCode }}</p>
+          </mat-card-content>
+        </mat-card>
 
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{{ i18n.t('orders.product') }}</th>
-                <th>{{ i18n.t('checkout.quantity') }}</th>
-                <th>{{ i18n.t('checkout.unitPrice') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of detail.items; track item.productId) {
-                <tr>
-                  <td>#{{ item.productId }}</td>
-                  <td>{{ item.quantity }}</td>
-                  <td>{{ item.unitPrice | number: '1.2-2' }} {{ detail.currencyCode }}</td>
-                </tr>
-              }
-            </tbody>
+          <table mat-table [dataSource]="detail.items" class="items-table">
+            <ng-container matColumnDef="product">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('orders.product') }}</th>
+              <td mat-cell *matCellDef="let item">#{{ item.productId }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('checkout.quantity') }}</th>
+              <td mat-cell *matCellDef="let item">{{ item.quantity }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="unitPrice">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('checkout.unitPrice') }}</th>
+              <td mat-cell *matCellDef="let item">
+                {{ item.unitPrice | number: '1.2-2' }} {{ detail.currencyCode }}
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
           </table>
         </div>
       }
 
-      <a routerLink="/account/orders" class="quiet-btn quiet-btn--outline back">{{
+      <a mat-stroked-button class="back" routerLink="/account/orders">{{
         i18n.t('orders.backToList')
       }}</a>
     </section>
@@ -63,21 +69,14 @@ import { OrderDetail } from '../shared/models';
 
     h1 {
       margin: 0 0 2rem;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 2.25rem;
-    }
-
-    .eyebrow {
-      margin: 0 0 0.75rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+      font: var(--mat-sys-display-small);
     }
 
     .summary {
       margin-bottom: 2rem;
+    }
+
+    .summary mat-card-content {
       display: grid;
       gap: 0.35rem;
     }
@@ -85,35 +84,16 @@ import { OrderDetail } from '../shared/models';
     .table-wrap {
       overflow-x: auto;
       margin-bottom: 2rem;
-      border: 1px solid var(--border);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--mat-sys-corner-small);
     }
 
-    table {
+    .items-table {
       width: 100%;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      padding: 0.85rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .mono {
-      font-family: var(--font-mono);
     }
 
     .back {
-      display: inline-block;
-      text-decoration: none;
+      margin-top: 0.5rem;
     }
   `,
 })
@@ -122,6 +102,8 @@ export class AccountOrderDetailPage {
   private readonly api = inject(CatalogApiService);
   private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(LocaleService);
+
+  readonly displayedColumns = ['product', 'quantity', 'unitPrice'] as const;
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);

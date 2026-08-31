@@ -2,6 +2,12 @@ import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CartService } from '../cart/cart.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { Country, State } from '../shared/models';
@@ -9,12 +15,22 @@ import { LocaleService } from '../i18n/locale.service';
 
 @Component({
   selector: 'app-checkout-page',
-  imports: [ReactiveFormsModule, CurrencyPipe, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    CurrencyPipe,
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule,
+  ],
   template: `
     @if (cart.isEmpty()) {
       <section class="empty view-enter page-shell">
-        <p>{{ i18n.t('checkout.empty') }}</p>
-        <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{ i18n.t('cart.return') }}</a>
+        <p class="muted">{{ i18n.t('checkout.empty') }}</p>
+        <a mat-stroked-button routerLink="/products">{{ i18n.t('cart.return') }}</a>
       </section>
     } @else {
       <section class="checkout view-enter page-shell">
@@ -24,69 +40,70 @@ import { LocaleService } from '../i18n/locale.service';
             <fieldset>
               <legend>{{ i18n.t('checkout.contact') }}</legend>
               <div class="row">
-                <label>
-                  <span>{{ i18n.t('checkout.firstName') }}</span>
-                  <input class="gallery-input" formControlName="firstName" />
-                </label>
-                <label>
-                  <span>{{ i18n.t('checkout.lastName') }}</span>
-                  <input class="gallery-input" formControlName="lastName" />
-                </label>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>{{ i18n.t('checkout.firstName') }}</mat-label>
+                  <input matInput formControlName="firstName" />
+                </mat-form-field>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>{{ i18n.t('checkout.lastName') }}</mat-label>
+                  <input matInput formControlName="lastName" />
+                </mat-form-field>
               </div>
-              <label class="full">
-                <span>{{ i18n.t('checkout.email') }}</span>
-                <input class="gallery-input" type="email" formControlName="email" />
-              </label>
+              <mat-form-field subscriptSizing="dynamic">
+                <mat-label>{{ i18n.t('checkout.email') }}</mat-label>
+                <input matInput type="email" formControlName="email" />
+              </mat-form-field>
             </fieldset>
 
             <fieldset>
               <legend>{{ i18n.t('checkout.delivery') }}</legend>
-              <label class="full">
-                <span>{{ i18n.t('checkout.street') }}</span>
-                <input class="gallery-input" formControlName="street" />
-              </label>
+              <mat-form-field subscriptSizing="dynamic">
+                <mat-label>{{ i18n.t('checkout.street') }}</mat-label>
+                <input matInput formControlName="street" />
+              </mat-form-field>
               <div class="row">
-                <label>
-                  <span>{{ i18n.t('checkout.city') }}</span>
-                  <input class="gallery-input" formControlName="city" />
-                </label>
-                <label>
-                  <span>{{ i18n.t('checkout.zip') }}</span>
-                  <input class="gallery-input" formControlName="zipCode" />
-                </label>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>{{ i18n.t('checkout.city') }}</mat-label>
+                  <input matInput formControlName="city" />
+                </mat-form-field>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>{{ i18n.t('checkout.zip') }}</mat-label>
+                  <input matInput formControlName="zipCode" />
+                </mat-form-field>
               </div>
               <div class="row">
-                <label>
-                  <span>{{ i18n.t('checkout.country') }}</span>
-                  <select
-                    class="gallery-select"
-                    formControlName="country"
-                    (change)="onCountry($any($event.target).value)"
-                  >
-                    <option value="" disabled>{{ i18n.t('checkout.selectCountry') }}</option>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>{{ i18n.t('checkout.country') }}</mat-label>
+                  <mat-select formControlName="country" (selectionChange)="onCountry($event.value)">
+                    <mat-option value="" disabled>{{ i18n.t('checkout.selectCountry') }}</mat-option>
                     @for (country of countries(); track country.id) {
-                      <option [value]="country.code">{{ country.name }}</option>
+                      <mat-option [value]="country.code">{{ country.name }}</mat-option>
                     }
-                  </select>
-                </label>
-                <label>
-                  <span>{{ i18n.t('checkout.state') }}</span>
-                  <select class="gallery-select" formControlName="state">
-                    <option value="" disabled>{{ i18n.t('checkout.selectState') }}</option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>{{ i18n.t('checkout.state') }}</mat-label>
+                  <mat-select formControlName="state">
+                    <mat-option value="" disabled>{{ i18n.t('checkout.selectState') }}</mat-option>
                     @for (state of states(); track state.id) {
-                      <option [value]="state.id">{{ state.name }}</option>
+                      <mat-option [value]="state.id">{{ state.name }}</mat-option>
                     }
-                  </select>
-                </label>
+                  </mat-select>
+                </mat-form-field>
               </div>
             </fieldset>
 
             <button
-              class="quiet-btn quiet-btn--solid"
+              mat-flat-button
+              color="primary"
               type="submit"
               [disabled]="form.invalid || cart.isEmpty() || submitting()"
             >
-              {{ submitting() ? i18n.t('checkout.placingOrder') : i18n.t('checkout.placeOrder') }}
+              @if (submitting()) {
+                <mat-spinner diameter="20" />
+              } @else {
+                {{ i18n.t('checkout.placeOrder') }}
+              }
             </button>
 
             @if (error()) {
@@ -94,40 +111,44 @@ import { LocaleService } from '../i18n/locale.service';
             }
           </form>
 
-          <aside class="summary">
-            <h2>{{ i18n.t('checkout.summary') }}</h2>
-            <ul>
-              @for (item of cart.items(); track item.product.id) {
-                <li>
-                  <span>{{ item.product.name }} × {{ item.quantity }}</span>
+          <mat-card class="summary">
+            <mat-card-header>
+              <mat-card-title>{{ i18n.t('checkout.summary') }}</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <ul>
+                @for (item of cart.items(); track item.product.id) {
+                  <li>
+                    <span>{{ item.product.name }} × {{ item.quantity }}</span>
+                    <span class="mono">{{
+                      i18n.lineTotal(item.product.unitPrice, item.quantity)
+                        | currency
+                          : i18n.currencyCode()
+                          : 'symbol'
+                          : '1.2-2'
+                          : i18n.localeId()
+                    }}</span>
+                  </li>
+                }
+              </ul>
+              <div class="totals">
+                <div>
+                  <span>{{ i18n.t('cart.subtotal') }}</span>
                   <span class="mono">{{
-                    i18n.lineTotal(item.product.unitPrice, item.quantity)
-                      | currency
-                        : i18n.currencyCode()
-                        : 'symbol'
-                        : '1.2-2'
-                        : i18n.localeId()
+                    cart.subtotal()
+                      | currency: i18n.currencyCode() : 'symbol' : '1.2-2' : i18n.localeId()
                   }}</span>
-                </li>
-              }
-            </ul>
-            <div class="totals">
-              <div>
-                <span>{{ i18n.t('cart.subtotal') }}</span>
-                <span class="mono">{{
-                  cart.subtotal()
-                    | currency: i18n.currencyCode() : 'symbol' : '1.2-2' : i18n.localeId()
-                }}</span>
+                </div>
+                <div class="grand">
+                  <span>{{ i18n.t('checkout.total') }}</span>
+                  <span class="mono">{{
+                    cart.subtotal()
+                      | currency: i18n.currencyCode() : 'symbol' : '1.2-2' : i18n.localeId()
+                  }}</span>
+                </div>
               </div>
-              <div class="grand">
-                <span>{{ i18n.t('checkout.total') }}</span>
-                <span class="mono">{{
-                  cart.subtotal()
-                    | currency: i18n.currencyCode() : 'symbol' : '1.2-2' : i18n.localeId()
-                }}</span>
-              </div>
-            </div>
-          </aside>
+            </mat-card-content>
+          </mat-card>
         </div>
       </section>
     }
@@ -138,87 +159,48 @@ import { LocaleService } from '../i18n/locale.service';
       padding-block: 3.5rem;
     }
 
-    @media (min-width: 640px) {
-      .checkout,
-      .empty {
-        padding-block: 5rem;
-      }
-    }
-
     .empty {
       max-width: 42rem;
       text-align: center;
       margin-inline: auto;
     }
 
-    .empty p {
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-    }
-
-    .empty a {
-      display: inline-block;
-      text-decoration: none;
-    }
-
     h1 {
-      margin: 0 0 3rem;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 2.25rem;
-      letter-spacing: -0.02em;
-    }
-
-    @media (min-width: 640px) {
-      h1 {
-        font-size: 3rem;
-        margin-bottom: 4rem;
-      }
+      margin: 0 0 2rem;
+      font: var(--mat-sys-headline-medium);
     }
 
     .layout {
       display: grid;
-      gap: 3rem;
+      gap: 2rem;
     }
 
     @media (min-width: 1024px) {
       .layout {
         grid-template-columns: 3fr 2fr;
-        gap: 4rem;
         align-items: start;
       }
     }
 
     fieldset {
       border: 0;
-      margin: 0 0 2rem;
+      margin: 0 0 1.5rem;
       padding: 0;
-      display: grid;
-      gap: 1.5rem;
-    }
-
-    legend {
-      margin-bottom: 1rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0;
-    }
-
-    label {
       display: grid;
       gap: 0.5rem;
     }
 
-    label span {
-      font-size: 0.75rem;
-      color: var(--muted);
+    legend {
+      margin-bottom: 0.75rem;
+      font: var(--mat-sys-label-medium);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mat-sys-on-surface-variant);
     }
 
     .row {
       display: grid;
-      gap: 1.5rem;
+      gap: 0.5rem;
     }
 
     @media (min-width: 640px) {
@@ -227,60 +209,38 @@ import { LocaleService } from '../i18n/locale.service';
       }
     }
 
-    .full {
+    mat-form-field {
       width: 100%;
     }
 
-    .summary {
-      background: var(--surface);
-      padding: 2rem;
-    }
-
-    @media (min-width: 640px) {
-      .summary {
-        padding: 2.5rem;
-      }
-    }
-
-    .summary h2 {
-      margin: 0 0 1.5rem;
-      font-size: 0.75rem;
-      font-weight: 400;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+    button[mat-flat-button] {
+      margin-top: 0.5rem;
     }
 
     .summary ul {
       list-style: none;
-      margin: 0 0 2rem;
+      margin: 0 0 1.5rem;
       padding: 0;
       display: grid;
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
     .summary li {
       display: flex;
       justify-content: space-between;
       gap: 1rem;
-      font-size: 0.875rem;
+      font: var(--mat-sys-body-medium);
     }
 
     .summary li span:first-child {
-      color: var(--muted);
-    }
-
-    .mono {
-      font-family: var(--font-mono);
-      flex-shrink: 0;
+      color: var(--mat-sys-on-surface-variant);
     }
 
     .totals {
-      border-top: 1px solid var(--border);
-      padding-top: 1.5rem;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+      padding-top: 1rem;
       display: grid;
       gap: 0.5rem;
-      font-size: 0.875rem;
     }
 
     .totals > div {
@@ -288,23 +248,8 @@ import { LocaleService } from '../i18n/locale.service';
       justify-content: space-between;
     }
 
-    .totals > div span:first-child {
-      color: var(--muted);
-    }
-
     .grand {
-      padding-top: 0.75rem;
-      font-size: 1rem;
-    }
-
-    .grand span:first-child {
-      color: var(--fg) !important;
-    }
-
-    .error {
-      margin-top: 1rem;
-      color: var(--danger);
-      font-size: 0.875rem;
+      font: var(--mat-sys-title-medium);
     }
   `,
 })

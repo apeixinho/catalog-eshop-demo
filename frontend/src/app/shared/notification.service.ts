@@ -1,34 +1,23 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { LocaleService } from '../i18n/locale.service';
-
-export type ToastTone = 'neutral' | 'success';
-
-export interface Toast {
-  id: number;
-  message: string;
-  tone: ToastTone;
-}
 
 const FLASH_KEY = 'catalog.flash';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private readonly items = signal<Toast[]>([]);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly i18n = inject(LocaleService);
-  private nextId = 0;
-
-  readonly toasts = this.items.asReadonly();
 
   success(message: string, durationMs = 3200): void {
-    this.push(message, 'success', durationMs);
+    this.snackBar.open(message, undefined, {
+      duration: durationMs,
+      panelClass: ['snackbar-success'],
+    });
   }
 
   info(message: string, durationMs = 3200): void {
-    this.push(message, 'neutral', durationMs);
-  }
-
-  dismiss(id: number): void {
-    this.items.update((list) => list.filter((toast) => toast.id !== id));
+    this.snackBar.open(message, undefined, { duration: durationMs });
   }
 
   /** Show a flash message set before a full-page redirect (e.g. OIDC logout). */
@@ -39,11 +28,5 @@ export class NotificationService {
     }
     sessionStorage.removeItem(FLASH_KEY);
     this.info(this.i18n.t(flash));
-  }
-
-  private push(message: string, tone: ToastTone, durationMs: number): void {
-    const id = ++this.nextId;
-    this.items.update((list) => [...list, { id, message, tone }]);
-    window.setTimeout(() => this.dismiss(id), durationMs);
   }
 }

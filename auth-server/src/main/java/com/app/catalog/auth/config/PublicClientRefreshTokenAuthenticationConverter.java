@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 final class PublicClientRefreshTokenAuthenticationConverter implements AuthenticationConverter {
 
     @Override
+    @SuppressWarnings("null")
     public @Nullable Authentication convert(HttpServletRequest request) {
         String grantType = request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
         if (!AuthorizationGrantType.REFRESH_TOKEN.getValue().equals(grantType)) {
@@ -51,6 +52,7 @@ final class PublicClientRefreshTokenAuthenticationConverter implements Authentic
             clientId, ClientAuthenticationMethod.NONE, null, additionalParameters);
     }
 
+    @SuppressWarnings("null")
     private static MultiValueMap<String, String> getFormParameters(HttpServletRequest request) {
         Map<String, String[]> parameterMap = request.getParameterMap();
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
