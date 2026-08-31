@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -7,6 +8,8 @@ import {
 } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
+import { MatSelectHarness } from '@angular/material/select/testing';
+import { harnessLoader } from './testing/material-harness-support';
 import { App } from './app';
 import { NotificationService } from './shared/notification.service';
 import { LocaleService } from './i18n/locale.service';
@@ -22,8 +25,8 @@ describe('App', () => {
   let theme: ThemeService;
   let notifications: {
     consumeFlash: ReturnType<typeof vi.fn>;
-    toasts: ReturnType<typeof signal<[]>>;
-    dismiss: ReturnType<typeof vi.fn>;
+    success: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
   };
 
   const ratesUrl = `${environment.apiBaseUrl}/api/v1/currency/rates`;
@@ -31,14 +34,15 @@ describe('App', () => {
   beforeEach(async () => {
     notifications = {
       consumeFlash: vi.fn(),
-      toasts: signal([]),
-      dismiss: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         provideHttpClient(),
         provideHttpClientTesting(),
         LocaleService,
@@ -125,5 +129,12 @@ describe('App', () => {
 
     expect(document.documentElement.lang).toBe(locale.language());
     expect(document.title).toBe(locale.t('nav.catalog'));
+  });
+
+  it('exposes theme and locale Material selects', async () => {
+    initApp();
+    const loader = harnessLoader(fixture);
+    const selects = await loader.getAllHarnesses(MatSelectHarness);
+    expect(selects.length).toBe(2);
   });
 });

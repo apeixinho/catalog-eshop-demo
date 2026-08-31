@@ -1,14 +1,30 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTableModule } from '@angular/material/table';
 import { AuthService } from '../auth/auth.service';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
+import { ConfirmDialog } from '../shared/confirm-dialog';
 import { CustomerSummary, CustomerUpsert } from '../shared/models';
 
 @Component({
   selector: 'app-manage-customers-page',
-  imports: [RouterLink, FormsModule],
+  imports: [
+    RouterLink,
+    FormsModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatTableModule,
+  ],
   template: `
     <section class="page view-enter page-shell">
       <p class="eyebrow">{{ i18n.t('manage.title') }}</p>
@@ -18,30 +34,30 @@ import { CustomerSummary, CustomerUpsert } from '../shared/models';
         <form class="admin-form" (ngSubmit)="saveCustomer()">
           <h2>{{ editingId() ? i18n.t('manage.editCustomer') : i18n.t('manage.createCustomer') }}</h2>
           <div class="grid">
-            <label>
-              {{ i18n.t('manage.firstName') }}
-              <input [(ngModel)]="form.firstName" name="firstName" required />
-            </label>
-            <label>
-              {{ i18n.t('manage.lastName') }}
-              <input [(ngModel)]="form.lastName" name="lastName" required />
-            </label>
-            <label>
-              {{ i18n.t('manage.email') }}
-              <input [(ngModel)]="form.email" name="email" type="email" required />
-            </label>
-            <label>
-              {{ i18n.t('manage.oauthSub') }}
-              <input [(ngModel)]="form.oauthSub" name="oauthSub" required />
-            </label>
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>{{ i18n.t('manage.firstName') }}</mat-label>
+              <input matInput [(ngModel)]="form.firstName" name="firstName" required />
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>{{ i18n.t('manage.lastName') }}</mat-label>
+              <input matInput [(ngModel)]="form.lastName" name="lastName" required />
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>{{ i18n.t('manage.email') }}</mat-label>
+              <input matInput [(ngModel)]="form.email" name="email" type="email" required />
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>{{ i18n.t('manage.oauthSub') }}</mat-label>
+              <input matInput [(ngModel)]="form.oauthSub" name="oauthSub" required />
+            </mat-form-field>
           </div>
           @if (formError()) {
             <p class="error">{{ formError() }}</p>
           }
           <div class="actions">
-            <button type="submit" class="quiet-btn">{{ i18n.t('manage.save') }}</button>
+            <button mat-flat-button color="primary" type="submit">{{ i18n.t('manage.save') }}</button>
             @if (editingId()) {
-              <button type="button" class="quiet-btn quiet-btn--outline" (click)="resetForm()">
+              <button mat-stroked-button type="button" (click)="resetForm()">
                 {{ i18n.t('manage.cancel') }}
               </button>
             }
@@ -50,55 +66,59 @@ import { CustomerSummary, CustomerUpsert } from '../shared/models';
       }
 
       @if (loading()) {
-        <p class="muted">{{ i18n.t('orders.loading') }}</p>
+        <div class="loading">
+          <mat-spinner diameter="40" />
+          <p class="muted">{{ i18n.t('orders.loading') }}</p>
+        </div>
       } @else if (error()) {
         <p class="error">{{ error() }}</p>
       } @else {
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>{{ i18n.t('manage.name') }}</th>
-                <th>{{ i18n.t('manage.email') }}</th>
-                <th>{{ i18n.t('manage.orderCount') }}</th>
-                @if (auth.isAdmin()) {
-                  <th>{{ i18n.t('manage.actions') }}</th>
-                }
-              </tr>
-            </thead>
-            <tbody>
-              @for (customer of customers(); track customer.id) {
-                <tr>
-                  <td>{{ customer.id }}</td>
-                  <td>{{ customer.firstName }} {{ customer.lastName }}</td>
-                  <td>{{ customer.email }}</td>
-                  <td>{{ customer.orderCount }}</td>
-                  @if (auth.isAdmin()) {
-                    <td class="actions-cell">
-                      <button type="button" class="quiet-btn quiet-btn--outline" (click)="editCustomer(customer)">
-                        {{ i18n.t('manage.edit') }}
-                      </button>
-                      <button
-                        type="button"
-                        class="quiet-btn quiet-btn--outline"
-                        (click)="deleteCustomer(customer)"
-                        [disabled]="customer.orderCount > 0"
-                      >
-                        {{ i18n.t('manage.delete') }}
-                      </button>
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
+          <table mat-table [dataSource]="customers()" class="customers-table">
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef>ID</th>
+              <td mat-cell *matCellDef="let customer">{{ customer.id }}</td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('manage.name') }}</th>
+              <td mat-cell *matCellDef="let customer">
+                {{ customer.firstName }} {{ customer.lastName }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('manage.email') }}</th>
+              <td mat-cell *matCellDef="let customer">{{ customer.email }}</td>
+            </ng-container>
+            <ng-container matColumnDef="orderCount">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('manage.orderCount') }}</th>
+              <td mat-cell *matCellDef="let customer">{{ customer.orderCount }}</td>
+            </ng-container>
+            @if (auth.isAdmin()) {
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>{{ i18n.t('manage.actions') }}</th>
+                <td mat-cell *matCellDef="let customer">
+                  <button mat-stroked-button type="button" (click)="editCustomer(customer)">
+                    {{ i18n.t('manage.edit') }}
+                  </button>
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    color="warn"
+                    (click)="deleteCustomer(customer)"
+                    [disabled]="customer.orderCount > 0"
+                  >
+                    {{ i18n.t('manage.delete') }}
+                  </button>
+                </td>
+              </ng-container>
+            }
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
           </table>
         </div>
       }
 
-      <a routerLink="/products" class="quiet-btn quiet-btn--outline back">{{
-        i18n.t('account.back')
-      }}</a>
+      <a mat-stroked-button routerLink="/products" class="back">{{ i18n.t('account.back') }}</a>
     </section>
   `,
   styles: `
@@ -109,94 +129,62 @@ import { CustomerSummary, CustomerUpsert } from '../shared/models';
 
     h1 {
       margin: 0 0 2rem;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 2.25rem;
+      font: var(--mat-sys-headline-medium);
     }
 
     h2 {
       margin: 0 0 1rem;
-      font-size: 1.125rem;
-    }
-
-    .eyebrow {
-      margin: 0 0 0.75rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+      font: var(--mat-sys-title-medium);
     }
 
     .admin-form {
       margin-bottom: 2rem;
       padding: 1.25rem;
-      border: 1px solid var(--border);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--mat-sys-corner-medium, 12px);
     }
 
     .grid {
       display: grid;
-      gap: 1rem;
+      gap: 0.5rem;
       grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     }
 
-    label {
-      display: grid;
-      gap: 0.35rem;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    input {
-      padding: 0.55rem 0.65rem;
-      border: 1px solid var(--border);
-      background: var(--surface, #fff);
-      color: inherit;
-    }
-
-    .actions,
-    .actions-cell {
+    .actions {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .table-wrap {
       overflow-x: auto;
       margin-bottom: 2rem;
-      border: 1px solid var(--border);
     }
 
-    table {
+    .customers-table {
       width: 100%;
-      border-collapse: collapse;
     }
 
-    th,
-    td {
-      padding: 0.85rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .error {
-      color: var(--danger, #b42318);
+    td button + button {
+      margin-left: 0.5rem;
     }
 
     .back {
-      display: inline-block;
-      text-decoration: none;
+      margin-top: 1rem;
     }
   `,
 })
 export class ManageCustomersPage implements OnInit {
   private readonly api = inject(CatalogApiService);
+  private readonly dialog = inject(MatDialog);
   readonly auth = inject(AuthService);
   readonly i18n = inject(LocaleService);
 
@@ -207,6 +195,12 @@ export class ManageCustomersPage implements OnInit {
   readonly editingId = signal<number | null>(null);
 
   form: CustomerUpsert = emptyForm();
+
+  get displayedColumns(): string[] {
+    return this.auth.isAdmin()
+      ? ['id', 'name', 'email', 'orderCount', 'actions']
+      : ['id', 'name', 'email', 'orderCount'];
+  }
 
   ngOnInit(): void {
     this.reload();
@@ -246,10 +240,24 @@ export class ManageCustomersPage implements OnInit {
   }
 
   deleteCustomer(customer: CustomerSummary): void {
-    this.api.deleteAdminCustomer(customer.id).subscribe({
-      next: () => this.reload(),
-      error: () => this.error.set(this.i18n.t('manage.deleteFailed')),
-    });
+    this.dialog
+      .open(ConfirmDialog, {
+        data: {
+          message: this.i18n.t('manage.delete'),
+          confirmLabel: this.i18n.t('manage.delete'),
+          cancelLabel: this.i18n.t('manage.cancel'),
+        },
+      })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (!confirmed) {
+          return;
+        }
+        this.api.deleteAdminCustomer(customer.id).subscribe({
+          next: () => this.reload(),
+          error: () => this.error.set(this.i18n.t('manage.deleteFailed')),
+        });
+      });
   }
 
   resetForm(): void {

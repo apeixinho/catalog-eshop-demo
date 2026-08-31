@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom, TimeoutError } from 'rxjs';
 import { filter, take, timeout } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -7,24 +8,25 @@ import { LocaleService } from '../i18n/locale.service';
 
 @Component({
   selector: 'app-auth-callback',
+  imports: [MatProgressSpinnerModule],
   template: `
     <section class="callback view-enter page-shell">
       @if (error()) {
         <p class="error">{{ error() }}</p>
       } @else {
-        <p>{{ i18n.t('auth.signingIn') }}</p>
+        <mat-spinner diameter="48" />
+        <p class="muted">{{ i18n.t('auth.signingIn') }}</p>
       }
     </section>
   `,
   styles: `
     .callback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
       padding-block: 6rem;
       text-align: center;
-      color: var(--muted);
-    }
-
-    .error {
-      color: var(--danger);
     }
   `,
 })

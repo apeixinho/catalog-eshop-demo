@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { MatInputHarness } from '@angular/material/input/testing';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
+import { harnessLoader } from '../testing/material-harness-support';
 import { CheckoutPage } from './checkout-page';
 import { CartService } from '../cart/cart.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
@@ -49,6 +52,7 @@ describe('CheckoutPage', () => {
       imports: [CheckoutPage],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: CatalogApiService, useValue: api },
         { provide: CartService, useValue: cart },
         {
@@ -167,5 +171,11 @@ describe('CheckoutPage', () => {
 
     expect(api.purchase).not.toHaveBeenCalled();
     expect(component.error()).toBe('checkout.purchaseFailed');
+  });
+
+  it('renders checkout fields via Material input harnesses', async () => {
+    const loader = harnessLoader(fixture);
+    const inputs = await loader.getAllHarnesses(MatInputHarness);
+    expect(inputs.length).toBeGreaterThanOrEqual(5);
   });
 });

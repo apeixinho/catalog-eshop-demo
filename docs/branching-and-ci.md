@@ -115,7 +115,7 @@ Path-filtered workflows (**Frontend CI**, **Backend CI**, etc.) **skip** when th
 
 This repo uses **compose smoke as the merge gate** and unit CI as **advisory fast feedback**.
 
-### Verify rulesets after saving
+### Check repository rulesets
 
 ```bash
 # List rulesets (requires gh auth with repo admin)

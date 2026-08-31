@@ -1,6 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import {
   DEFAULT_THEME_ID,
+  THEME_CLASS,
+  THEME_IDS,
   THEME_OPTIONS,
   THEME_STORAGE_KEY,
   ThemeId,
@@ -29,7 +31,11 @@ export class ThemeService {
   }
 
   private apply(theme: ThemeId): void {
-    document.documentElement.setAttribute('data-theme', theme);
+    const root = document.documentElement;
+    for (const id of THEME_IDS) {
+      root.classList.remove(THEME_CLASS[id]);
+    }
+    root.classList.add(THEME_CLASS[theme]);
   }
 
   private readStoredTheme(): ThemeId {

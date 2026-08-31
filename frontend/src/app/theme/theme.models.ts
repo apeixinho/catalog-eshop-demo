@@ -6,6 +6,12 @@ export const DEFAULT_THEME_ID: ThemeId = 'default';
 
 export const THEME_STORAGE_KEY = 'catalog.theme';
 
+/** Material M3 theme classes on `html` (keep in sync with public/theme-boot.js). */
+export const THEME_CLASS: Record<ThemeId, string> = {
+  default: 'mat-theme-default',
+  alternative: 'mat-theme-alternative',
+};
+
 export interface ThemeOption {
   id: ThemeId;
   labelKey: string;

@@ -97,7 +97,7 @@ class CheckoutPaymentIntegrationTest {
             .isEqualTo(stockBefore);
 
         JsonNode body = objectMapper.readTree(placed.getResponse().getContentAsString());
-        String tracking = body.get("orderTrackingNumber").asText();
+        String tracking = body.get("orderTrackingNumber").asString();
 
         mockMvc.perform(post("/api/v1/checkout/payment-webhook")
                 .header("X-Payment-Secret", "dev-payment-secret")
@@ -142,7 +142,7 @@ class CheckoutPaymentIntegrationTest {
             .andReturn();
 
         String tracking = objectMapper.readTree(placed.getResponse().getContentAsString())
-            .get("orderTrackingNumber").asText();
+            .get("orderTrackingNumber").asString();
 
         mockMvc.perform(post("/api/v1/checkout/payment-webhook")
                 .header("X-Payment-Secret", "dev-payment-secret")
@@ -173,7 +173,7 @@ class CheckoutPaymentIntegrationTest {
             .andReturn();
 
         String tracking = objectMapper.readTree(placed.getResponse().getContentAsString())
-            .get("orderTrackingNumber").asText();
+            .get("orderTrackingNumber").asString();
 
         Product product = productRepository.findById(1L).orElseThrow();
         product.setUnitsInStock(0);
@@ -206,7 +206,7 @@ class CheckoutPaymentIntegrationTest {
             .andReturn();
 
         String tracking = objectMapper.readTree(placed.getResponse().getContentAsString())
-            .get("orderTrackingNumber").asText();
+            .get("orderTrackingNumber").asString();
 
         mockMvc.perform(get("/api/v1/checkout/orders/{tracking}", tracking))
             .andExpect(status().isUnauthorized());

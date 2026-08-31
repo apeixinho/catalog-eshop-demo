@@ -1,18 +1,20 @@
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { vi } from 'vitest';
 import { NotificationService } from './notification.service';
 import { LocaleService } from '../i18n/locale.service';
 
 describe('NotificationService', () => {
   let notifications: NotificationService;
+  let snackBar: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    sessionStorage.clear();
-    vi.useFakeTimers();
+    snackBar = { open: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
         NotificationService,
+        { provide: MatSnackBar, useValue: snackBar },
         { provide: LocaleService, useValue: { t: (key: string) => key } },
       ],
     });
@@ -20,32 +22,24 @@ describe('NotificationService', () => {
     notifications = TestBed.inject(NotificationService);
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('pushes success toast and auto-dismisses', () => {
+  it('opens success snackbar', () => {
     notifications.success('Saved');
-    expect(notifications.toasts()).toHaveLength(1);
-    expect(notifications.toasts()[0].message).toBe('Saved');
-    expect(notifications.toasts()[0].tone).toBe('success');
-
-    vi.advanceTimersByTime(3200);
-    expect(notifications.toasts()).toHaveLength(0);
+    expect(snackBar.open).toHaveBeenCalledWith('Saved', undefined, {
+      duration: 3200,
+      panelClass: ['snackbar-success'],
+    });
   });
 
-  it('dismiss removes toast by id', () => {
+  it('opens info snackbar', () => {
     notifications.info('Notice');
-    const id = notifications.toasts()[0].id;
-    notifications.dismiss(id);
-    expect(notifications.toasts()).toHaveLength(0);
+    expect(snackBar.open).toHaveBeenCalledWith('Notice', undefined, { duration: 3200 });
   });
 
-  it('consumeFlash reads session flash and shows info toast', () => {
+  it('consumeFlash reads session flash and shows info snackbar', () => {
     sessionStorage.setItem('catalog.flash', 'toast.signedOut');
     notifications.consumeFlash();
 
     expect(sessionStorage.getItem('catalog.flash')).toBeNull();
-    expect(notifications.toasts()[0].message).toBe('toast.signedOut');
+    expect(snackBar.open).toHaveBeenCalledWith('toast.signedOut', undefined, { duration: 3200 });
   });
 });

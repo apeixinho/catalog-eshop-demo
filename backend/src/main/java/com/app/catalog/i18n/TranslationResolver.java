@@ -19,11 +19,13 @@ public final class TranslationResolver {
     private TranslationResolver() {
     }
 
+    @SuppressWarnings("null")
     public static String productName(Product product, String locale) {
         return resolve(product.getTranslations(), locale, ProductTranslation::getLocale, ProductTranslation::getName)
             .orElse("");
     }
 
+    @SuppressWarnings("null")
     public static String productDescription(Product product, String locale) {
         return resolve(
                 product.getTranslations(),
@@ -33,6 +35,7 @@ public final class TranslationResolver {
             .orElse("");
     }
 
+    @SuppressWarnings("null")
     public static String categoryName(ProductCategory category, String locale) {
         return resolve(
                 category.getTranslations(),
@@ -42,6 +45,7 @@ public final class TranslationResolver {
             .orElse("");
     }
 
+    @SuppressWarnings("null")
     public static String countryName(Country country, String locale) {
         return resolve(
                 country.getTranslations(),
@@ -51,11 +55,13 @@ public final class TranslationResolver {
             .orElse("");
     }
 
+    @SuppressWarnings("null")
     public static String stateName(State state, String locale) {
         return resolve(state.getTranslations(), locale, StateTranslation::getLocale, StateTranslation::getName)
             .orElse("");
     }
 
+    @SuppressWarnings("null")
     private static <T> Optional<String> resolve(
         Collection<T> translations,
         String locale,
