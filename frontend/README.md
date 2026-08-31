@@ -39,7 +39,7 @@ The storefront uses [Angular Material 22](https://material.angular.dev/) (M3) wi
 | `default` | azure-blue (light) |
 | `alternative` | rose-red (light) |
 
-Themes are applied via Sass (`src/styles.scss`) and toggled on `html` through `ThemeService` (`mat-theme-default` / `mat-theme-alternative`). FOUC is avoided by `public/theme-boot.js`.
+Themes are applied via Sass (`src/styles.scss`) and toggled on `html` through `ThemeService` (`mat-theme-default` / `mat-theme-alternative`). FOUC (Flash of Unstyled Content) is avoided by `public/theme-boot.js`.
 
 Notifications use `MatSnackBar`; tables use `MatTable`; forms use `MatFormField` / `MatInput` / `MatSelect`.
 
