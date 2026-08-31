@@ -1,24 +1,28 @@
 import { Component, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatCardModule } from '@angular/material/card';
 import { CartService } from './cart.service';
 import { LocaleService } from '../i18n/locale.service';
 
 @Component({
   selector: 'app-cart-page',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, MatButtonModule, MatIconModule, MatDividerModule, MatCardModule],
   template: `
     @if (cart.isEmpty()) {
       <section class="empty view-enter page-shell">
         <h1>{{ i18n.t('cart.emptyTitle') }}</h1>
-        <p>{{ i18n.t('cart.emptyBody') }}</p>
-        <a routerLink="/products" class="quiet-btn quiet-btn--outline">{{ i18n.t('cart.return') }}</a>
+        <p class="muted">{{ i18n.t('cart.emptyBody') }}</p>
+        <a mat-stroked-button routerLink="/products">{{ i18n.t('cart.return') }}</a>
       </section>
     } @else {
       <section class="cart view-enter page-shell">
         <h1>{{ i18n.t('cart.title') }}</h1>
         <ul>
-          @for (item of cart.items(); track item.product.id) {
+          @for (item of cart.items(); track item.product.id; let last = $last) {
             <li>
               <div class="thumb">
                 <img
@@ -36,25 +40,25 @@ import { LocaleService } from '../i18n/locale.service';
                 <div class="actions">
                   <div class="qty">
                     <button
+                      mat-icon-button
                       type="button"
-                      class="qty-btn"
                       [attr.aria-label]="i18n.t('cart.decrease')"
                       (click)="cart.updateQuantity(item.product.id, item.quantity - 1)"
                     >
-                      −
+                      <mat-icon>remove</mat-icon>
                     </button>
-                    <span class="qty-value">{{ item.quantity }}</span>
+                    <span class="qty-value mono">{{ item.quantity }}</span>
                     <button
+                      mat-icon-button
                       type="button"
-                      class="qty-btn"
                       [attr.aria-label]="i18n.t('cart.increase')"
                       (click)="cart.updateQuantity(item.product.id, item.quantity + 1)"
                     >
-                      +
+                      <mat-icon>add</mat-icon>
                     </button>
                   </div>
                   <div class="line">
-                    <span class="price">{{
+                    <span class="price mono">{{
                       i18n.lineTotal(item.product.unitPrice, item.quantity)
                         | currency
                           : i18n.currencyCode()
@@ -63,8 +67,8 @@ import { LocaleService } from '../i18n/locale.service';
                           : i18n.localeId()
                     }}</span>
                     <button
+                      mat-button
                       type="button"
-                      class="quiet-btn"
                       (click)="cart.removeFromCart(item.product.id)"
                     >
                       {{ i18n.t('cart.remove') }}
@@ -73,19 +77,26 @@ import { LocaleService } from '../i18n/locale.service';
                 </div>
               </div>
             </li>
+            @if (!last) {
+              <mat-divider />
+            }
           }
         </ul>
-        <div class="summary">
-          <div>
-            <p class="label">{{ i18n.t('cart.subtotal') }}</p>
-            <p class="total">{{
-              cart.subtotal()
-                | currency: i18n.currencyCode() : 'symbol' : '1.2-2' : i18n.localeId()
-            }}</p>
-            <p class="note">{{ i18n.t('cart.shippingNote') }}</p>
-          </div>
-          <a routerLink="/checkout" class="quiet-btn quiet-btn--solid">{{ i18n.t('cart.checkout') }}</a>
-        </div>
+        <mat-card class="summary">
+          <mat-card-content>
+            <div class="summary-inner">
+              <div>
+                <p class="label">{{ i18n.t('cart.subtotal') }}</p>
+                <p class="total mono">{{
+                  cart.subtotal()
+                    | currency: i18n.currencyCode() : 'symbol' : '1.2-2' : i18n.localeId()
+                }}</p>
+                <p class="note muted">{{ i18n.t('cart.shippingNote') }}</p>
+              </div>
+              <a mat-flat-button color="primary" routerLink="/checkout">{{ i18n.t('cart.checkout') }}</a>
+            </div>
+          </mat-card-content>
+        </mat-card>
       </section>
     }
   `,
@@ -105,29 +116,20 @@ import { LocaleService } from '../i18n/locale.service';
     .empty h1,
     .cart h1 {
       margin: 0 0 1rem;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 2.25rem;
-      letter-spacing: -0.02em;
+      font: var(--mat-sys-display-small);
     }
 
     @media (min-width: 640px) {
       .empty h1,
       .cart h1 {
-        font-size: 3rem;
+        font: var(--mat-sys-display-medium);
       }
     }
 
     .empty p {
       margin: 0 auto 2.5rem;
       max-width: 24rem;
-      color: var(--muted);
       line-height: 1.6;
-    }
-
-    .empty a {
-      display: inline-block;
-      text-decoration: none;
     }
 
     .cart {
@@ -155,7 +157,6 @@ import { LocaleService } from '../i18n/locale.service';
       display: flex;
       gap: 1.25rem;
       padding-block: 2rem;
-      border-bottom: 1px solid var(--border);
     }
 
     @media (min-width: 640px) {
@@ -169,7 +170,8 @@ import { LocaleService } from '../i18n/locale.service';
       flex-shrink: 0;
       aspect-ratio: 3 / 4;
       overflow: hidden;
-      background: var(--surface);
+      background: var(--mat-sys-surface-container);
+      border-radius: var(--mat-sys-corner-small);
     }
 
     @media (min-width: 640px) {
@@ -196,21 +198,13 @@ import { LocaleService } from '../i18n/locale.service';
 
     h2 {
       margin: 0;
-      font-family: var(--font-display);
-      font-size: 1.25rem;
-      font-weight: 500;
-    }
-
-    @media (min-width: 640px) {
-      h2 {
-        font-size: 1.5rem;
-      }
+      font: var(--mat-sys-title-large);
     }
 
     .details p {
       margin: 0.35rem 0 0;
-      font-size: 0.875rem;
-      color: var(--muted);
+      font: var(--mat-sys-body-medium);
+      color: var(--mat-sys-on-surface-variant);
       display: -webkit-box;
       -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
@@ -228,30 +222,11 @@ import { LocaleService } from '../i18n/locale.service';
     .qty {
       display: flex;
       align-items: center;
-      gap: 1rem;
-    }
-
-    .qty-btn {
-      width: 2.75rem;
-      height: 2.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      transition: color 0.3s ease, border-color 0.3s ease;
-    }
-
-    .qty-btn:hover {
-      color: var(--fg);
-      border-color: var(--accent);
+      gap: 0.25rem;
     }
 
     .qty-value {
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
+      font: var(--mat-sys-body-medium);
       width: 1.5rem;
       text-align: center;
     }
@@ -259,29 +234,25 @@ import { LocaleService } from '../i18n/locale.service';
     .line {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
-    }
-
-    .price,
-    .total {
-      font-family: var(--font-mono);
+      gap: 0.5rem;
     }
 
     .price {
-      font-size: 0.875rem;
+      font: var(--mat-sys-body-medium);
     }
 
     .summary {
       margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--border);
+    }
+
+    .summary-inner {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
     }
 
     @media (min-width: 640px) {
-      .summary {
+      .summary-inner {
         flex-direction: row;
         align-items: flex-end;
         justify-content: space-between;
@@ -290,27 +261,20 @@ import { LocaleService } from '../i18n/locale.service';
 
     .label {
       margin: 0 0 0.25rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
+      font: var(--mat-sys-label-medium);
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--mat-sys-on-surface-variant);
     }
 
     .total {
       margin: 0;
-      font-size: 1.5rem;
+      font: var(--mat-sys-headline-small);
     }
 
     .note {
       margin: 0.5rem 0 0;
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .summary a {
-      display: inline-block;
-      text-decoration: none;
-      text-align: center;
+      font: var(--mat-sys-body-small);
     }
   `,
 })

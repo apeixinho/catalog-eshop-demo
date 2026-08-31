@@ -3,132 +3,137 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { interval } from 'rxjs';
 import { LocaleService } from '../i18n/locale.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
+import { ConfirmDialog } from '../shared/confirm-dialog';
 import { OrderStatus, OrderSummary } from '../shared/models';
 
 @Component({
   selector: 'app-manage-orders-page',
-  imports: [RouterLink, DecimalPipe, FormsModule],
+  imports: [
+    RouterLink,
+    DecimalPipe,
+    FormsModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatProgressSpinnerModule,
+    MatSelectModule,
+    MatTableModule,
+  ],
   template: `
     <section class="page view-enter page-shell">
       <p class="eyebrow">{{ i18n.t('manage.title') }}</p>
       <h1>{{ i18n.t('manage.ordersTitle') }}</h1>
 
       @if (loading()) {
-        <p class="muted">{{ i18n.t('orders.loading') }}</p>
+        <div class="loading">
+          <mat-spinner diameter="40" />
+          <p class="muted">{{ i18n.t('orders.loading') }}</p>
+        </div>
       } @else if (error()) {
         <p class="error">{{ error() }}</p>
       } @else if (orders().length === 0) {
         <p class="muted">{{ i18n.t('orders.empty') }}</p>
       } @else {
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>{{ i18n.t('checkout.tracking') }}</th>
-                <th>{{ i18n.t('orders.status') }}</th>
-                <th>{{ i18n.t('checkout.total') }}</th>
-                <th>{{ i18n.t('manage.actions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (order of orders(); track order.id) {
-                <tr>
-                  <td>{{ order.id }}</td>
-                  <td class="mono">{{ order.orderTrackingNumber }}</td>
-                  <td>
-                    @if (editingStatusId() === order.id) {
-                      <div class="status-edit">
-                        <select
-                          [(ngModel)]="draftStatus"
-                          [disabled]="busyId() === order.id"
-                          [attr.aria-label]="i18n.t('orders.status')"
-                        >
-                          @for (status of editableStatuses; track status) {
-                            <option [ngValue]="status">{{
-                              i18n.t('orders.status.' + status)
-                            }}</option>
-                          }
-                        </select>
-                        <button
-                          type="button"
-                          class="quiet-btn"
-                          (click)="saveStatusEdit(order)"
-                          [disabled]="busyId() === order.id"
-                        >
-                          {{ i18n.t('manage.save') }}
-                        </button>
-                        <button
-                          type="button"
-                          class="quiet-btn quiet-btn--outline"
-                          (click)="cancelStatusEdit()"
-                          [disabled]="busyId() === order.id"
-                        >
-                          {{ i18n.t('manage.cancel') }}
-                        </button>
-                      </div>
-                    } @else {
-                      <div class="status-view">
-                        <span>{{ i18n.t('orders.status.' + order.status) }}</span>
-                        <button
-                          type="button"
-                          class="quiet-btn quiet-btn--outline"
-                          (click)="startStatusEdit(order)"
-                          [disabled]="busyId() === order.id || order.status !== 'PENDING'"
-                        >
-                          {{ i18n.t('manage.changeStatus') }}
-                        </button>
-                      </div>
-                    }
-                  </td>
-                  <td>{{ order.totalPrice | number: '1.2-2' }} {{ order.currencyCode }}</td>
-                  <td>
+          <table mat-table [dataSource]="orders()" class="orders-table">
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef>ID</th>
+              <td mat-cell *matCellDef="let order">{{ order.id }}</td>
+            </ng-container>
+            <ng-container matColumnDef="tracking">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('checkout.tracking') }}</th>
+              <td mat-cell *matCellDef="let order" class="mono">{{ order.orderTrackingNumber }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('orders.status') }}</th>
+              <td mat-cell *matCellDef="let order">
+                @if (editingStatusId() === order.id) {
+                  <div class="status-edit">
+                    <mat-form-field subscriptSizing="dynamic">
+                      <mat-select
+                        [(ngModel)]="draftStatus"
+                        [disabled]="busyId() === order.id"
+                        [attr.aria-label]="i18n.t('orders.status')"
+                      >
+                        @for (status of editableStatuses; track status) {
+                          <mat-option [value]="status">{{
+                            i18n.t('orders.status.' + status)
+                          }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
                     <button
+                      mat-button
                       type="button"
-                      class="quiet-btn quiet-btn--outline"
-                      (click)="deleteOrder(order)"
-                      [disabled]="busyId() === order.id || order.status === 'PENDING'"
-                      [attr.title]="
-                        order.status === 'PENDING' ? i18n.t('manage.deletePendingHint') : null
-                      "
+                      (click)="saveStatusEdit(order)"
+                      [disabled]="busyId() === order.id"
                     >
-                      {{ i18n.t('manage.delete') }}
+                      {{ i18n.t('manage.save') }}
                     </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="cancelStatusEdit()"
+                      [disabled]="busyId() === order.id"
+                    >
+                      {{ i18n.t('manage.cancel') }}
+                    </button>
+                  </div>
+                } @else {
+                  <div class="status-view">
+                    <span>{{ i18n.t('orders.status.' + order.status) }}</span>
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="startStatusEdit(order)"
+                      [disabled]="busyId() === order.id || order.status !== 'PENDING'"
+                    >
+                      {{ i18n.t('manage.changeStatus') }}
+                    </button>
+                  </div>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('checkout.total') }}</th>
+              <td mat-cell *matCellDef="let order">
+                {{ order.totalPrice | number: '1.2-2' }} {{ order.currencyCode }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('manage.actions') }}</th>
+              <td mat-cell *matCellDef="let order">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  color="warn"
+                  (click)="deleteOrder(order)"
+                  [disabled]="busyId() === order.id || order.status === 'PENDING'"
+                  [attr.title]="
+                    order.status === 'PENDING' ? i18n.t('manage.deletePendingHint') : null
+                  "
+                >
+                  {{ i18n.t('manage.delete') }}
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
           </table>
         </div>
       }
 
-      <a routerLink="/products" class="quiet-btn quiet-btn--outline back">{{
-        i18n.t('account.back')
-      }}</a>
+      <a mat-stroked-button routerLink="/products" class="back">{{ i18n.t('account.back') }}</a>
     </section>
-
-    @if (confirmDeleteOrder(); as pendingDelete) {
-      <div class="confirm-backdrop" role="dialog" aria-modal="true">
-        <div class="confirm-panel">
-          <p>{{ i18n.t('manage.confirmDeletePaid') }}</p>
-          <div class="confirm-actions">
-            <button type="button" class="quiet-btn" (click)="performDelete(pendingDelete)">
-              {{ i18n.t('manage.delete') }}
-            </button>
-            <button
-              type="button"
-              class="quiet-btn quiet-btn--outline"
-              (click)="confirmDeleteOrder.set(null)"
-            >
-              {{ i18n.t('manage.cancel') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    }
   `,
   styles: `
     .page {
@@ -138,43 +143,23 @@ import { OrderStatus, OrderSummary } from '../shared/models';
 
     h1 {
       margin: 0 0 2rem;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 2.25rem;
+      font: var(--mat-sys-headline-medium);
     }
 
-    .eyebrow {
-      margin: 0 0 0.75rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .table-wrap {
       overflow-x: auto;
       margin-bottom: 2rem;
-      border: 1px solid var(--border);
     }
 
-    table {
+    .orders-table {
       width: 100%;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      padding: 0.85rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-
-    th {
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
     }
 
     .status-view,
@@ -185,62 +170,24 @@ import { OrderStatus, OrderSummary } from '../shared/models';
       gap: 0.5rem;
     }
 
-    select {
-      min-width: 8rem;
-      padding: 0.35rem 0.5rem;
-      border: 1px solid var(--border);
-      background: var(--surface, #fff);
-      color: inherit;
-    }
-
-    .mono {
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-    }
-
     .back {
-      display: inline-block;
-      text-decoration: none;
-    }
-
-    .confirm-backdrop {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgb(0 0 0 / 45%);
-      padding: 1rem;
-      z-index: 1000;
-    }
-
-    .confirm-panel {
-      width: min(28rem, 100%);
-      padding: 1.5rem;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      box-shadow: 0 12px 40px rgb(0 0 0 / 18%);
-    }
-
-    .confirm-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 1.25rem;
+      margin-top: 1rem;
     }
   `,
 })
 export class ManageOrdersPage implements OnInit {
   private readonly api = inject(CatalogApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(MatDialog);
   readonly i18n = inject(LocaleService);
 
+  readonly displayedColumns = ['id', 'tracking', 'status', 'total', 'actions'];
   readonly editableStatuses: OrderStatus[] = ['PENDING', 'CANCELLED'];
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly orders = signal<OrderSummary[]>([]);
   readonly busyId = signal<number | null>(null);
   readonly editingStatusId = signal<number | null>(null);
-  readonly confirmDeleteOrder = signal<OrderSummary | null>(null);
   draftStatus: OrderStatus = 'PENDING';
 
   ngOnInit(): void {
@@ -261,7 +208,11 @@ export class ManageOrdersPage implements OnInit {
   }
 
   private readonly onVisibilityChange = (): void => {
-    if (document.visibilityState === 'visible' && this.editingStatusId() === null && this.busyId() === null) {
+    if (
+      document.visibilityState === 'visible' &&
+      this.editingStatusId() === null &&
+      this.busyId() === null
+    ) {
       this.reload(false);
     }
   };
@@ -304,14 +255,26 @@ export class ManageOrdersPage implements OnInit {
 
   deleteOrder(order: OrderSummary): void {
     if (order.status === 'PAID') {
-      this.confirmDeleteOrder.set(order);
+      this.dialog
+        .open(ConfirmDialog, {
+          data: {
+            message: this.i18n.t('manage.confirmDeletePaid'),
+            confirmLabel: this.i18n.t('manage.delete'),
+            cancelLabel: this.i18n.t('manage.cancel'),
+          },
+        })
+        .afterClosed()
+        .subscribe((confirmed) => {
+          if (confirmed) {
+            this.performDelete(order);
+          }
+        });
       return;
     }
     this.performDelete(order);
   }
 
   performDelete(order: OrderSummary): void {
-    this.confirmDeleteOrder.set(null);
     this.busyId.set(order.id);
     this.api.deleteManageOrder(order.id).subscribe({
       next: () => {

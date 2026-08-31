@@ -2,6 +2,9 @@ import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { map } from 'rxjs/operators';
 import { CatalogApiService } from '../shared/catalog-api.service';
 import { Product } from '../shared/models';
@@ -10,18 +13,18 @@ import { LocaleService } from '../i18n/locale.service';
 
 @Component({
   selector: 'app-product-detail-page',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, MatButtonModule, MatCardModule, MatChipsModule],
   template: `
     <section class="detail view-enter page-shell">
-      <a routerLink="/products" class="back quiet-btn">{{ i18n.t('product.back') }}</a>
+      <a mat-button class="back" routerLink="/products">{{ i18n.t('product.back') }}</a>
 
       @if (error()) {
-        <p class="status">{{ error() }}</p>
+        <p class="status muted">{{ error() }}</p>
       } @else if (!product()) {
-        <p class="status">{{ i18n.t('product.loading') }}</p>
+        <p class="status muted">{{ i18n.t('product.loading') }}</p>
       } @else {
         <div class="layout">
-          <div class="media frame">
+          <div class="media frame product-image-wrap">
             <img
               class="animate-fade-in"
               [src]="imageSrc(product()!.imageUrl)"
@@ -29,45 +32,53 @@ import { LocaleService } from '../i18n/locale.service';
             />
           </div>
 
-          <div class="info">
-            @if (product()!.category?.categoryName) {
-              <p class="eyebrow">{{ product()!.category!.categoryName }}</p>
-            }
-            <h1>{{ product()!.name }}</h1>
-            <p class="sku mono">{{ i18n.t('product.sku') }}: {{ product()!.sku }}</p>
+          <mat-card class="info">
+            <mat-card-content>
+              @if (product()!.category?.categoryName) {
+                <mat-chip-set>
+                  <mat-chip>{{ product()!.category!.categoryName }}</mat-chip>
+                </mat-chip-set>
+              }
+              <h1>{{ product()!.name }}</h1>
+              <p class="sku mono">{{ i18n.t('product.sku') }}: {{ product()!.sku }}</p>
 
-            <p class="price">
-              {{
-                i18n.toDisplayMoney(product()!.unitPrice)
-                  | currency
-                    : i18n.currencyCode()
-                    : 'symbol'
-                    : '1.2-2'
-                    : i18n.localeId()
-              }}
-            </p>
+              <p class="price mono">
+                {{
+                  i18n.toDisplayMoney(product()!.unitPrice)
+                    | currency
+                      : i18n.currencyCode()
+                      : 'symbol'
+                      : '1.2-2'
+                      : i18n.localeId()
+                }}
+              </p>
 
-            @if (product()!.description) {
-              <p class="description">{{ product()!.description }}</p>
-            }
+              @if (product()!.description) {
+                <p class="description muted">{{ product()!.description }}</p>
+              }
 
-            <p class="stock" [class.stock--out]="!inStock()">
-              {{
-                inStock()
-                  ? i18n.t('product.inStock', { count: product()!.unitsInStock })
-                  : i18n.t('product.outOfStock')
-              }}
-            </p>
+              <mat-chip-set>
+                <mat-chip [highlighted]="inStock()">
+                  {{
+                    inStock()
+                      ? i18n.t('product.inStock', { count: product()!.unitsInStock })
+                      : i18n.t('product.outOfStock')
+                  }}
+                </mat-chip>
+              </mat-chip-set>
 
-            <button
-              type="button"
-              class="quiet-btn quiet-btn--solid add"
-              [disabled]="!inStock()"
-              (click)="add()"
-            >
-              {{ i18n.t('catalog.addToCart') }}
-            </button>
-          </div>
+              <button
+                mat-flat-button
+                color="primary"
+                class="add"
+                type="button"
+                [disabled]="!inStock()"
+                (click)="add()"
+              >
+                {{ i18n.t('catalog.addToCart') }}
+              </button>
+            </mat-card-content>
+          </mat-card>
         </div>
       }
     </section>
@@ -84,26 +95,13 @@ import { LocaleService } from '../i18n/locale.service';
     }
 
     .back {
-      display: inline-block;
       margin-bottom: 2rem;
-      text-decoration: none;
-      color: var(--muted);
-      border-bottom: 1px solid transparent;
-      padding-bottom: 0.125rem;
-    }
-
-    .back:hover,
-    .back:focus-visible {
-      color: var(--fg);
-      border-bottom-color: var(--accent);
     }
 
     .status {
       margin: 4rem 0;
       text-align: center;
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      color: var(--muted);
+      font: var(--mat-sys-headline-small);
     }
 
     .layout {
@@ -121,7 +119,7 @@ import { LocaleService } from '../i18n/locale.service';
 
     .frame {
       aspect-ratio: 3 / 4;
-      background: var(--surface);
+      background: var(--mat-sys-surface-container);
       max-width: 28rem;
       margin-inline: auto;
       width: 100%;
@@ -141,72 +139,42 @@ import { LocaleService } from '../i18n/locale.service';
       display: block;
     }
 
-    .info {
+    .info mat-card-content {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       max-width: 36rem;
     }
 
-    .eyebrow {
-      margin: 0 0 0.75rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+    mat-chip-set {
+      margin-bottom: 0.75rem;
     }
 
     h1 {
       margin: 0;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: clamp(2rem, 4vw, 3rem);
+      font: var(--mat-sys-display-small);
       line-height: 1.15;
-      letter-spacing: -0.02em;
     }
 
     .sku {
       margin: 0.75rem 0 0;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .mono {
-      font-family: var(--font-mono);
+      font: var(--mat-sys-body-small);
     }
 
     .price {
       margin: 1.5rem 0 0;
-      font-family: var(--font-mono);
-      font-size: 1.25rem;
+      font: var(--mat-sys-title-large);
     }
 
     .description {
       margin: 1.5rem 0 0;
-      font-size: 1rem;
+      font: var(--mat-sys-body-large);
       line-height: 1.65;
-      color: var(--muted);
       white-space: pre-wrap;
-    }
-
-    .stock {
-      margin: 1.25rem 0 0;
-      font-size: 0.875rem;
-      color: var(--fg);
-    }
-
-    .stock--out {
-      color: var(--danger);
     }
 
     .add {
       margin-top: 2rem;
-      text-decoration: none;
-    }
-
-    .add:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
     }
   `,
 })
