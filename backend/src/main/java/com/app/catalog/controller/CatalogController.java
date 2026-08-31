@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+import com.app.catalog.entity.Product;
 import com.app.catalog.i18n.SupportedLocale;
 import com.app.catalog.mapper.CountryMapper;
 import com.app.catalog.mapper.ProductMapper;
@@ -164,6 +165,7 @@ public class CatalogController {
             .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("null")
     private static Pageable pageRequest(int page, int size) {
         if (page < 0) {
             throw new IllegalArgumentException("page must be >= 0");
@@ -171,6 +173,6 @@ public class CatalogController {
         if (size < 1 || size > MAX_PAGE_SIZE) {
             throw new IllegalArgumentException("size must be between 1 and " + MAX_PAGE_SIZE);
         }
-        return PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+        return PageRequest.of(page, size, Sort.by(Sort.Order.asc(Product::getId)));
     }
 }

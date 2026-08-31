@@ -64,6 +64,7 @@ public class DevAuthDataConfig {
         return new InMemoryOAuth2AuthorizationService();
     }
 
+    @SuppressWarnings("null")
     static RegisteredClient spaClient(String clientId, String frontendOrigin) {
         List<String> origins = Arrays.stream(frontendOrigin.split(","))
             .map(String::trim)

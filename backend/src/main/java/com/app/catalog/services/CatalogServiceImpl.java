@@ -38,11 +38,13 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Page<Product> getProducts(Pageable page) {
         return productRepository.findByActiveTrue(page).map(this::loadProductTranslations);
     }
 
     @Override
+    @SuppressWarnings("null")
     public Optional<Product> findByProductId(Long id) {
         return productRepository.findById(id)
             .filter(Product::isActive)
@@ -50,6 +52,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public List<ProductCategory> getProductCategories() {
         return productCategoryRepository.findAll().stream()
             .map(this::loadCategoryTranslations)
@@ -57,11 +60,13 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Page<Product> findByCategoryId(Long id, Pageable page) {
         return productRepository.findByCategoryIdAndActiveTrue(id, page).map(this::loadProductTranslations);
     }
 
     @Override
+    @SuppressWarnings("null")
     public Page<Product> findByNameContaining(String name, Long categoryId, Pageable page) {
         return productRepository
             .findByTranslatedNameContaining(name, categoryId, page)
@@ -69,6 +74,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public List<Country> getCountries() {
         return countryRepository.findAll().stream()
             .map(this::loadCountryTranslations)
@@ -76,6 +82,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public List<State> getStatesByCountryCode(String countryCode) {
         return stateRepository.findByCountryCode(countryCode).stream()
             .map(this::loadStateTranslations)
