@@ -74,7 +74,7 @@ class PaymentServiceApplicationTests {
             .andReturn();
 
         JsonNode body = objectMapper.readTree(created.getResponse().getContentAsString());
-        String sessionId = body.get("sessionId").asText();
+        String sessionId = body.get("sessionId").asString();
 
         mockMvc.perform(get("/checkout/" + sessionId))
             .andExpect(status().isOk());
@@ -100,7 +100,7 @@ class PaymentServiceApplicationTests {
             .andReturn();
 
         String cancelSessionId = objectMapper.readTree(createdCancel.getResponse().getContentAsString())
-            .get("sessionId").asText();
+            .get("sessionId").asString();
 
         mockMvc.perform(post("/checkout/" + cancelSessionId + "/cancel"))
             .andExpect(status().isFound())

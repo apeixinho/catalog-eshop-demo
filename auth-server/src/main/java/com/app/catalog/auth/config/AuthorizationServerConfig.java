@@ -119,6 +119,7 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
+    @SuppressWarnings("null")
     OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
         return context -> {
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
@@ -155,6 +156,7 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
+    @SuppressWarnings("null")
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.stream(frontendOrigin.split(","))

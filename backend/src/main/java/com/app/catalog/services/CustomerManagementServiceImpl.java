@@ -125,6 +125,7 @@ public class CustomerManagementServiceImpl implements CustomerManagementService 
         customer.setOauthSub(request.oauthSub().trim());
     }
 
+    @SuppressWarnings("null")
     private Map<Long, Long> orderCountsByCustomerId(List<Customer> customers) {
         if (customers.isEmpty()) {
             return Map.of();

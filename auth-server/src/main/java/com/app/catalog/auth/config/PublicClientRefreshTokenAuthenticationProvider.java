@@ -28,6 +28,7 @@ final class PublicClientRefreshTokenAuthenticationProvider implements Authentica
     }
 
     @Override
+    @SuppressWarnings("null")
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         OAuth2ClientAuthenticationToken clientAuthentication =
             (OAuth2ClientAuthenticationToken) authentication;
