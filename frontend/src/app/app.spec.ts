@@ -8,7 +8,7 @@ import {
 } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
-import { MatSelectHarness } from '@angular/material/select/testing';
+import { MatMenuHarness } from '@angular/material/menu/testing';
 import { harnessLoader } from './testing/material-harness-support';
 import { App } from './app';
 import { NotificationService } from './shared/notification.service';
@@ -131,10 +131,17 @@ describe('App', () => {
     expect(document.title).toBe(locale.t('nav.catalog'));
   });
 
-  it('exposes theme and locale Material selects', async () => {
+  it('exposes theme and locale choices under the account menu', async () => {
     initApp();
     const loader = harnessLoader(fixture);
-    const selects = await loader.getAllHarnesses(MatSelectHarness);
-    expect(selects.length).toBe(2);
+    const menus = await loader.getAllHarnesses(MatMenuHarness);
+    expect(menus.length).toBeGreaterThanOrEqual(1);
+
+    const accountMenu = menus[0];
+    await accountMenu.open();
+    const items = await accountMenu.getItems();
+    const labels = await Promise.all(items.map((item) => item.getText()));
+    expect(labels.some((label) => label.includes(locale.t('nav.theme')))).toBe(true);
+    expect(labels.some((label) => label.includes(locale.t('nav.locale')))).toBe(true);
   });
 });

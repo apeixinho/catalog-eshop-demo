@@ -156,7 +156,7 @@ import { LocaleService } from '../i18n/locale.service';
   styles: `
     .checkout,
     .empty {
-      padding-block: 3.5rem;
+      padding-block: 3rem 5rem;
     }
 
     .empty {
@@ -166,19 +166,36 @@ import { LocaleService } from '../i18n/locale.service';
     }
 
     h1 {
-      margin: 0 0 2rem;
-      font: var(--mat-sys-headline-medium);
+      margin: 0 0 1.75rem;
+      font-size: clamp(1.85rem, 4vw, 2.5rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
     }
 
     .layout {
       display: grid;
-      gap: 2rem;
+      gap: 1.5rem;
     }
 
     @media (min-width: 1024px) {
       .layout {
         grid-template-columns: 3fr 2fr;
         align-items: start;
+        gap: 2rem;
+      }
+    }
+
+    form {
+      padding: 1.35rem;
+      border-radius: var(--catalog-radius-lg);
+      border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
+      background: color-mix(in srgb, var(--mat-sys-surface) 90%, white);
+      box-shadow: var(--catalog-shadow-sm);
+    }
+
+    @media (min-width: 640px) {
+      form {
+        padding: 1.75rem;
       }
     }
 
@@ -187,20 +204,21 @@ import { LocaleService } from '../i18n/locale.service';
       margin: 0 0 1.5rem;
       padding: 0;
       display: grid;
-      gap: 0.5rem;
+      gap: 0.65rem;
     }
 
     legend {
       margin-bottom: 0.75rem;
-      font: var(--mat-sys-label-medium);
-      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--mat-sys-primary);
     }
 
     .row {
       display: grid;
-      gap: 0.5rem;
+      gap: 0.65rem;
     }
 
     @media (min-width: 640px) {
@@ -215,6 +233,12 @@ import { LocaleService } from '../i18n/locale.service';
 
     button[mat-flat-button] {
       margin-top: 0.5rem;
+      min-height: 2.85rem;
+    }
+
+    .summary {
+      position: sticky;
+      top: calc(var(--catalog-header-height) + 1rem);
     }
 
     .summary ul {
@@ -229,7 +253,7 @@ import { LocaleService } from '../i18n/locale.service';
       display: flex;
       justify-content: space-between;
       gap: 1rem;
-      font: var(--mat-sys-body-medium);
+      font-size: 0.95rem;
     }
 
     .summary li span:first-child {
@@ -237,7 +261,7 @@ import { LocaleService } from '../i18n/locale.service';
     }
 
     .totals {
-      border-top: 1px solid var(--mat-sys-outline-variant);
+      border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
       padding-top: 1rem;
       display: grid;
       gap: 0.5rem;
@@ -249,10 +273,12 @@ import { LocaleService } from '../i18n/locale.service';
     }
 
     .grand {
-      font: var(--mat-sys-title-medium);
+      font-family: var(--catalog-font-display);
+      font-size: 1.15rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
     }
-  `,
-})
+  `,})
 export class CheckoutPage {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(CatalogApiService);
