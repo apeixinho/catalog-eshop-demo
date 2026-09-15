@@ -1,0 +1,6 @@
+apiVersion: v2
+name: catalog-eshop
+description: Catalog E-Shop staging stack for Kind (MariaDB + auth + payment + API + SPA)
+type: application
+version: 0.1.0
+appVersion: "staging"

@@ -1,0 +1,101 @@
+# Default values for Kind + localhost browser URLs (mirrors compose.staging / .env.example).
+
+namespace: catalog-eshop
+
+images:
+  mariadb:
+    repository: mariadb
+    tag: "10"
+    pullPolicy: IfNotPresent
+  authServer:
+    repository: eshop-auth-server
+    tag: staging
+    pullPolicy: Never
+  paymentService:
+    repository: eshop-payment-service
+    tag: staging
+    pullPolicy: Never
+  backend:
+    repository: eshop-backend
+    tag: staging
+    pullPolicy: Never
+  frontend:
+    repository: eshop-frontend
+    tag: staging
+    pullPolicy: Never
+
+# Fixed NodePorts — must match deploy/kind/cluster-config.yaml extraPortMappings
+nodePorts:
+  frontend: 30420
+  backend: 30890
+  payment: 30891
+  auth: 30900
+
+config:
+  authIssuerUri: http://localhost:9000
+  authBrowserIssuerUri: http://localhost:9000
+  frontendOrigin: http://localhost:4200
+  apiBaseUrl: http://localhost:8090
+  oauthClientId: catalog-spa
+  oauthAudience: catalog-api
+  oauthRedirectUri: http://localhost:4200/auth/callback
+  oauthPostLogoutRedirectUri: http://localhost:4200/products
+  oauthScopes: "openid profile catalog.read catalog.write"
+  paymentPublicBaseUrl: http://localhost:8091
+  paymentCheckoutResultUrl: http://localhost:4200/checkout/result
+  # In-cluster DNS (Compose-compatible service names)
+  jwkSetUri: http://auth-server:9000/oauth2/jwks
+  paymentBaseUrl: http://payment-service:8091
+  paymentWebhookUrl: http://backend:8090/api/v1/checkout/payment-webhook
+  mariadbDatabase: catalog_db
+  authMariadbDatabase: catalog_auth
+  mariadbUsername: catalog_user
+
+secrets:
+  mariadbPassword: catalog_pass
+  mariadbRootPassword: catalog_root_pass
+  paymentApiSecret: dev-payment-secret
+  paymentWebhookSecret: dev-payment-secret
+
+persistence:
+  mariadb:
+    size: 2Gi
+  authJwk:
+    size: 64Mi
+
+resources:
+  mariadb:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  authServer:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  paymentService:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  backend:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  frontend:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

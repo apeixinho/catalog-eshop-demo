@@ -1,0 +1,69 @@
+# Kind / Helm smoke for the staging promotion lane (MariaDB stack on Kind).
+# Runs on PRs and pushes to `staging` only (Compose staging smoke stays in Stack CI).
+name: Kind CI
+
+on:
+  pull_request:
+    branches: [staging]
+  push:
+    branches: [staging]
+
+concurrency:
+  group: kind-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kind-staging:
+    name: Kind staging smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: catalog-eshop
+          config: deploy/kind/cluster-config.yaml
+
+      - name: Build staging images and load into Kind
+        env:
+          KIND_CLUSTER_NAME: catalog-eshop
+          CONTAINER_CLI: docker
+          IMAGE_PREFIX: ""
+        run: bash deploy/kind/build-and-load.sh
+
+      - name: Helm install
+        run: |
+          helm upgrade --install catalog-eshop deploy/helm/catalog-eshop \
+            -n catalog-eshop --create-namespace \
+            --wait --timeout 15m
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n catalog-eshop get pods,svc,pvc -o wide || true
+          kubectl -n catalog-eshop describe pods || true
+          for d in mariadb auth-server payment-service backend frontend; do
+            echo "===== logs $d ====="
+            kubectl -n catalog-eshop logs "deploy/$d" --tail=120 || true
+          done
+
+      - name: Smoke checks
+        run: |
+          set -euo pipefail
+          curl -sf http://localhost:9000/actuator/health | tee /tmp/auth-health.json
+          curl -sf http://localhost:8091/actuator/health | tee /tmp/payment-health.json
+          curl -sf http://localhost:8090/actuator/health | tee /tmp/backend-health.json
+          curl -sf "http://localhost:8090/api/v1/products?page=0&size=1" | tee /tmp/products.json
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4200/)
+          echo "frontend HTTP ${code}"
+          case "${code}" in
+            200|301|302) ;;
+            *) echo "unexpected frontend status ${code}"; exit 1 ;;
+          esac

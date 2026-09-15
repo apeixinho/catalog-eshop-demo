@@ -45,7 +45,17 @@ See [Stack CI workflow](../.github/workflows/stack-ci.yml):
 | PR or push to `staging` / `main` | Always **`Compose staging smoke`** (`compose.staging.yml`, MariaDB + nginx) |
 | Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, …) | Also **`Compose staging smoke`** on any branch |
 
-Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on **`dev`** (locale pinned to US English in the test).
+### Kind CI (Helm on Kind)
+
+See [Kind CI workflow](../.github/workflows/kind-ci.yml):
+
+| Trigger | Job |
+|---------|-----|
+| PR or push to `staging` | Always **`Kind staging smoke`** (build `*:staging` images → Kind → Helm → curl) |
+
+Does **not** run on `dev` (Compose remains the `dev` gate). Kind smoke is the Kubernetes check on the staging promotion lane alongside Compose staging smoke.
+
+Smoke = `deploy/kind/build-and-load.sh` + `helm upgrade --install` + curl health/products/SPA (same ports as Compose).
 
 **Required check names** (exact job `name:` values — use these in Rulesets):
 
@@ -53,6 +63,9 @@ Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playw
 |----------|----------------|
 | `Compose dev smoke` | Every PR/push targeting `dev` |
 | `Compose staging smoke` | Every PR/push targeting `staging` or `main`; also stack-file changes elsewhere |
+| `Kind staging smoke` | Every PR/push targeting `staging` |
+
+Compose smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on **`dev`** (locale pinned to US English in the test).
 
 ## Promoting changes
 
