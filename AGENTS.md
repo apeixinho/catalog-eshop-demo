@@ -44,6 +44,16 @@ Backend integration tests: build JWT post-processors via [JwtTestSupport](backen
 
 See README Quick start (JVM) or Docker Compose. **Do not** run `compose.dev.yml` and `compose.staging.yml` simultaneously — shared ports `4200/8090/8091/9000`.
 
+### Kind / Helm (`deploy/`)
+
+Staging-like Kubernetes path: [deploy/README.md](deploy/README.md). Same host ports as Compose — **do not** run Compose and Kind together.
+
+- Service DNS must stay Compose-compatible: `mariadb`, `auth-server`, `payment-service`, `backend` (JDBC / JWKS / webhook URLs).
+- Images: build `*:staging` Dockerfiles, then `kind load` (`imagePullPolicy: Never` for app images). Default Helm values use `eshop-*:staging` (Docker/CI). Podman: add `-f values-podman.yaml`. MariaDB uses `mariadb:10`.
+- CI: [`.github/workflows/kind-ci.yml`](.github/workflows/kind-ci.yml) runs **Kind staging smoke** on PRs/pushes to `staging`.
+- Auth JWK PVC needs `fsGroup` so non-root `javauser` can write `/opt/app/data`.
+- Payment is in-memory — keep `replicas: 1`.
+
 Demo logins (dev/staging seed): `user` / `password`, `manager` / `password`, `admin` / `password`.
 
 Branch promotion and required checks: [docs/branching-and-ci.md](docs/branching-and-ci.md).

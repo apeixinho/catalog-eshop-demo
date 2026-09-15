@@ -1,0 +1,29 @@
+{{- /*
+Smoke checklist after install:
+  kubectl -n {{ .Release.Namespace }} get pods
+  curl -fsS http://localhost:4200/
+  curl -fsS http://localhost:8090/actuator/health
+  curl -fsS http://localhost:9000/actuator/health
+  curl -fsS http://localhost:8091/actuator/health
+  Open http://localhost:4200 — login user/password
+*/ -}}
+════════════════════════════════════════
+ Catalog E-Shop (Kind / Helm)
+════════════════════════════════════════
+
+Namespace: {{ .Release.Namespace }}
+Release:   {{ .Release.Name }}
+
+Browser URLs (Kind host port maps):
+  SPA:     http://localhost:4200
+  API:     http://localhost:8090
+  Auth:    http://localhost:9000
+  Payment: http://localhost:8091
+
+Demo logins: user / password  (also manager, admin)
+
+Wait for Ready:
+  kubectl -n {{ .Release.Namespace }} wait --for=condition=available --timeout=300s \
+    deploy/mariadb deploy/auth-server deploy/payment-service deploy/backend deploy/frontend
+
+Do not run Compose stacks on the same host ports at the same time.

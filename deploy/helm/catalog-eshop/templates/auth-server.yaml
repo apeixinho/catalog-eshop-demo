@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    {{- include "catalog-eshop.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: auth-server
+      {{- include "catalog-eshop.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: auth-server
+        {{- include "catalog-eshop.selectorLabels" . | nindent 8 }}
+    spec:
+      # javauser (Alpine system group) must write AUTH_JWK_PATH on the PVC
+      securityContext:
+        fsGroup: 100
+      containers:
+        - name: auth-server
+          image: "{{ .Values.images.authServer.repository }}:{{ .Values.images.authServer.tag }}"
+          imagePullPolicy: {{ .Values.images.authServer.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9000
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: staging
+            - name: AUTH_SERVER_PORT
+              value: "9000"
+            - name: AUTH_JWK_PATH
+              value: /opt/app/data/auth-jwk.json
+            - name: AUTH_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-eshop-config
+                  key: AUTH_ISSUER_URI
+            - name: FRONTEND_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-eshop-config
+                  key: FRONTEND_ORIGIN
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-eshop-config
+                  key: OAUTH_CLIENT_ID
+            - name: OAUTH_AUDIENCE
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-eshop-config
+                  key: OAUTH_AUDIENCE
+            - name: AUTH_MARIADB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-eshop-config
+                  key: AUTH_MARIADB_DATABASE
+            - name: MARIADB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-eshop-config
+                  key: MARIADB_USERNAME
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-eshop-secrets
+                  key: MARIADB_PASSWORD
+          volumeMounts:
+            - name: jwk
+              mountPath: /opt/app/data
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources.authServer | nindent 12 }}
+      volumes:
+        - name: jwk
+          persistentVolumeClaim:
+            claimName: auth-jwk-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-server
+  labels:
+    {{- include "catalog-eshop.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth-server
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/component: auth-server
+    {{- include "catalog-eshop.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 9000
+      targetPort: http
+      nodePort: {{ .Values.nodePorts.auth }}

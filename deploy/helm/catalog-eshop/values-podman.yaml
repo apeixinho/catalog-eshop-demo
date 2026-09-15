@@ -1,0 +1,11 @@
+# Podman local builds tag images as localhost/<name>.
+# Usage: helm upgrade --install ... -f values.yaml -f values-podman.yaml
+images:
+  authServer:
+    repository: localhost/eshop-auth-server
+  paymentService:
+    repository: localhost/eshop-payment-service
+  backend:
+    repository: localhost/eshop-backend
+  frontend:
+    repository: localhost/eshop-frontend
