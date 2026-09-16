@@ -73,7 +73,7 @@ metadata:
     {{- include "catalog-eshop.labels" . | nindent 4 }}
     app.kubernetes.io/component: payment-service
 spec:
-  type: NodePort
+  type: {{ include "catalog-eshop.serviceType" . }}
   selector:
     app.kubernetes.io/component: payment-service
     {{- include "catalog-eshop.selectorLabels" . | nindent 4 }}
@@ -81,4 +81,6 @@ spec:
     - name: http
       port: 8091
       targetPort: http
+      {{- if not .Values.ingress.enabled }}
       nodePort: {{ .Values.nodePorts.payment }}
+      {{- end }}

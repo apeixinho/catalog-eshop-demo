@@ -110,7 +110,7 @@ metadata:
     {{- include "catalog-eshop.labels" . | nindent 4 }}
     app.kubernetes.io/component: backend
 spec:
-  type: NodePort
+  type: {{ include "catalog-eshop.serviceType" . }}
   selector:
     app.kubernetes.io/component: backend
     {{- include "catalog-eshop.selectorLabels" . | nindent 4 }}
@@ -118,4 +118,6 @@ spec:
     - name: http
       port: 8090
       targetPort: http
+      {{- if not .Values.ingress.enabled }}
       nodePort: {{ .Values.nodePorts.backend }}
+      {{- end }}

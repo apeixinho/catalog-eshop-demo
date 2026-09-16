@@ -51,11 +51,11 @@ See [Kind CI workflow](../.github/workflows/kind-ci.yml):
 
 | Trigger | Job |
 |---------|-----|
-| PR or push to `staging` | Always **`Kind staging smoke`** (build `*:staging` images → Kind → Helm → curl) |
+| PR or push to `staging` | Always **`Kind staging smoke`** (build `*:staging` images → Kind → ingress-nginx → Helm → curl `*.localhost`) |
 
 Does **not** run on `dev` (Compose remains the `dev` gate). Kind smoke is the Kubernetes check on the staging promotion lane alongside Compose staging smoke.
 
-Smoke = `deploy/kind/build-and-load.sh` + `helm upgrade --install` + curl health/products/SPA (same ports as Compose).
+Smoke = `deploy/kind/build-and-load.sh` + `helm upgrade --install` + curl health/products/SPA via Ingress hosts (same chart defaults as local `kind-dev`).
 
 **Required check names** (exact job `name:` values — use these in Rulesets):
 

@@ -1,9 +1,11 @@
-# Ephemeral Kind cluster for CI / one-shot smoke (name: catalog-eshop).
-# Same ingress host ports as kind-dev — apps reach the browser via Ingress + *.localhost.
-# For a durable multi-app laptop cluster, use kind-dev.yaml + setup-kind-dev.sh instead.
+# Durable shared Kind cluster for local multi-app development (Podman or Docker).
+# Create once; deploy apps into namespaces. Do NOT delete this cluster to uninstall an app.
+#
+# Host ports 80/443 → ingress-nginx only. Apps use Ingress hostnames (*.localhost),
+# so this cluster does not fight Compose on 4200/8090/8091/9000.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-name: catalog-eshop
+name: kind-dev
 nodes:
   - role: control-plane
     kubeadmConfigPatches:

@@ -13,3 +13,11 @@ helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
 app.kubernetes.io/name: {{ include "catalog-eshop.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
+
+{{- define "catalog-eshop.serviceType" -}}
+{{- if .Values.ingress.enabled -}}
+ClusterIP
+{{- else -}}
+NodePort
+{{- end -}}
+{{- end -}}

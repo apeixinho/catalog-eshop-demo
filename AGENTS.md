@@ -46,11 +46,13 @@ See README Quick start (JVM) or Docker Compose. **Do not** run `compose.dev.yml`
 
 ### Kind / Helm (`deploy/`)
 
-Staging-like Kubernetes path: [deploy/README.md](deploy/README.md). Same host ports as Compose — **do not** run Compose and Kind together.
+Staging-like Kubernetes path: [deploy/README.md](deploy/README.md). Prefer durable **`kind-dev`** + ingress-nginx (`bash deploy/kind/setup-kind-dev.sh`); app lifecycle is Helm/namespace only.
 
+- Default URLs: `http://catalog.localhost`, `api` / `auth` / `payment` subdomains (Ingress on host `:80`). Compose ports `4200/8090/8091/9000` stay free.
+- Optional Compose-parity NodePorts: `-f deploy/helm/catalog-eshop/values-nodeport.yaml` (conflicts with Compose).
 - Service DNS must stay Compose-compatible: `mariadb`, `auth-server`, `payment-service`, `backend` (JDBC / JWKS / webhook URLs).
 - Images: build `*:staging` Dockerfiles, then `kind load` (`imagePullPolicy: Never` for app images). Default Helm values use `eshop-*:staging` (Docker/CI). Podman: add `-f values-podman.yaml`. MariaDB uses `mariadb:10`.
-- CI: [`.github/workflows/kind-ci.yml`](.github/workflows/kind-ci.yml) runs **Kind staging smoke** on PRs/pushes to `staging`.
+- CI: [`.github/workflows/kind-ci.yml`](.github/workflows/kind-ci.yml) runs **Kind staging smoke** on PRs/pushes to `staging` (ephemeral cluster + ingress + `*.localhost` curls).
 - Auth JWK PVC needs `fsGroup` so non-root `javauser` can write `/opt/app/data`.
 - Payment is in-memory — keep `replicas: 1`.
 

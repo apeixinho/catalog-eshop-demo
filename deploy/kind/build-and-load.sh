@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-CLUSTER_NAME="${KIND_CLUSTER_NAME:-catalog-eshop}"
+CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind-dev}"
 CLI="${CONTAINER_CLI:-}"
 if [[ -z "${CLI}" ]]; then
   if command -v docker >/dev/null 2>&1; then

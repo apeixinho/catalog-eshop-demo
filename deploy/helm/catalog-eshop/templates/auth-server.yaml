@@ -104,7 +104,7 @@ metadata:
     {{- include "catalog-eshop.labels" . | nindent 4 }}
     app.kubernetes.io/component: auth-server
 spec:
-  type: NodePort
+  type: {{ include "catalog-eshop.serviceType" . }}
   selector:
     app.kubernetes.io/component: auth-server
     {{- include "catalog-eshop.selectorLabels" . | nindent 4 }}
@@ -112,4 +112,6 @@ spec:
     - name: http
       port: 9000
       targetPort: http
+      {{- if not .Values.ingress.enabled }}
       nodePort: {{ .Values.nodePorts.auth }}
+      {{- end }}

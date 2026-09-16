@@ -1,4 +1,8 @@
-# Default values for Kind + localhost browser URLs (mirrors compose.staging / .env.example).
+# Default: Ingress + ClusterIP on a shared Kind cluster (kind-dev or CI).
+# Hostnames use *.localhost (resolves to 127.0.0.1) via ingress-nginx on :80.
+# Does not bind Compose ports 4200/8090/8091/9000.
+#
+# Opt into Compose-parity NodePorts: -f values-nodeport.yaml (needs matching extraPortMappings).
 
 namespace: catalog-eshop
 
@@ -24,25 +28,30 @@ images:
     tag: staging
     pullPolicy: Never
 
-# Fixed NodePorts — must match deploy/kind/cluster-config.yaml extraPortMappings
-nodePorts:
-  frontend: 30420
-  backend: 30890
-  payment: 30891
-  auth: 30900
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    frontend: catalog.localhost
+    backend: api.catalog.localhost
+    auth: auth.catalog.localhost
+    payment: payment.catalog.localhost
+
+# Used only when ingress.enabled=false (see values-nodeport.yaml).
+nodePorts: {}
 
 config:
-  authIssuerUri: http://localhost:9000
-  authBrowserIssuerUri: http://localhost:9000
-  frontendOrigin: http://localhost:4200
-  apiBaseUrl: http://localhost:8090
+  authIssuerUri: http://auth.catalog.localhost
+  authBrowserIssuerUri: http://auth.catalog.localhost
+  frontendOrigin: http://catalog.localhost
+  apiBaseUrl: http://api.catalog.localhost
   oauthClientId: catalog-spa
   oauthAudience: catalog-api
-  oauthRedirectUri: http://localhost:4200/auth/callback
-  oauthPostLogoutRedirectUri: http://localhost:4200/products
+  oauthRedirectUri: http://catalog.localhost/auth/callback
+  oauthPostLogoutRedirectUri: http://catalog.localhost/products
   oauthScopes: "openid profile catalog.read catalog.write"
-  paymentPublicBaseUrl: http://localhost:8091
-  paymentCheckoutResultUrl: http://localhost:4200/checkout/result
+  paymentPublicBaseUrl: http://payment.catalog.localhost
+  paymentCheckoutResultUrl: http://catalog.localhost/checkout/result
   # In-cluster DNS (Compose-compatible service names)
   jwkSetUri: http://auth-server:9000/oauth2/jwks
   paymentBaseUrl: http://payment-service:8091
