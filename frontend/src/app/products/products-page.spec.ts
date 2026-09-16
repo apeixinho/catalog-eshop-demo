@@ -128,6 +128,18 @@ describe('ProductsPage', () => {
     expect(cart.addToCart).toHaveBeenCalledWith(sampleProduct);
   });
 
+  it('navigates the hero slideshow', () => {
+    expect(component.heroIndex()).toBe(0);
+    component.nextHero();
+    expect(component.heroIndex()).toBe(1);
+    component.prevHero();
+    expect(component.heroIndex()).toBe(0);
+    component.goToHero(component.heroSlides.length - 1);
+    expect(component.heroIndex()).toBe(component.heroSlides.length - 1);
+    component.nextHero();
+    expect(component.heroIndex()).toBe(0);
+  });
+
   it('normalizes image URLs', () => {
     expect(component.imageSrc(null)).toBe('/assets/images/products/placeholder.png');
     expect(component.imageSrc('/img.png')).toBe('/img.png');

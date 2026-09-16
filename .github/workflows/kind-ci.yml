@@ -31,6 +31,12 @@ jobs:
           cluster_name: catalog-eshop
           config: deploy/kind/cluster-config.yaml
 
+      - name: Install ingress-nginx
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.0/deploy/static/provider/kind/deploy.yaml
+          kubectl -n ingress-nginx wait --for=condition=ready pod \
+            -l app.kubernetes.io/component=controller --timeout=180s
+
       - name: Build staging images and load into Kind
         env:
           KIND_CLUSTER_NAME: catalog-eshop
@@ -47,8 +53,10 @@ jobs:
       - name: Diagnostics on failure
         if: failure()
         run: |
-          kubectl -n catalog-eshop get pods,svc,pvc -o wide || true
+          kubectl -n catalog-eshop get pods,svc,ingress,pvc -o wide || true
+          kubectl -n ingress-nginx get pods -o wide || true
           kubectl -n catalog-eshop describe pods || true
+          kubectl -n catalog-eshop describe ingress || true
           for d in mariadb auth-server payment-service backend frontend; do
             echo "===== logs $d ====="
             kubectl -n catalog-eshop logs "deploy/$d" --tail=120 || true
@@ -57,11 +65,11 @@ jobs:
       - name: Smoke checks
         run: |
           set -euo pipefail
-          curl -sf http://localhost:9000/actuator/health | tee /tmp/auth-health.json
-          curl -sf http://localhost:8091/actuator/health | tee /tmp/payment-health.json
-          curl -sf http://localhost:8090/actuator/health | tee /tmp/backend-health.json
-          curl -sf "http://localhost:8090/api/v1/products?page=0&size=1" | tee /tmp/products.json
-          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4200/)
+          curl -sf http://auth.catalog.localhost/actuator/health | tee /tmp/auth-health.json
+          curl -sf http://payment.catalog.localhost/actuator/health | tee /tmp/payment-health.json
+          curl -sf http://api.catalog.localhost/actuator/health | tee /tmp/backend-health.json
+          curl -sf "http://api.catalog.localhost/api/v1/products?page=0&size=1" | tee /tmp/products.json
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://catalog.localhost/)
           echo "frontend HTTP ${code}"
           case "${code}" in
             200|301|302) ;;

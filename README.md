@@ -74,16 +74,16 @@ Staging frontend is nginx on container port **80** (`4200:80`). Dev frontend is 
 
 ## Kubernetes (Kind + Helm)
 
-Do **not** run Compose and Kind stacks at the same time (shared host ports `4200` / `8090` / `8091` / `9000`).
+Prefer a durable shared cluster (`kind-dev`) with Ingress — Compose ports stay free:
 
 ```bash
-bash deploy/kind/create-cluster.sh
+bash deploy/kind/setup-kind-dev.sh
 bash deploy/kind/build-and-load.sh   # CONTAINER_CLI=podman if needed
 helm upgrade --install catalog-eshop deploy/helm/catalog-eshop \
   -n catalog-eshop --create-namespace
 ```
 
-Same browser URLs and demo logins as Compose staging. Full steps, wiring, and uninstall: [deploy/README.md](deploy/README.md).
+Open http://catalog.localhost (also `api` / `auth` / `payment` `.catalog.localhost`). Uninstall with Helm only — do not delete the Kind cluster for app teardown. Full steps: [deploy/README.md](deploy/README.md).
 
 ### Runtime SPA config
 
