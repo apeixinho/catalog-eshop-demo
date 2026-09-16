@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('Shopper smoke', () => {
   test('user login → products → account orders', async ({ page }) => {
     await page.goto('/products', { waitUntil: 'networkidle' });
-    await expect(page.locator('a.brand')).toBeVisible();
+    await expect(page.locator('mat-toolbar a.brand')).toBeVisible();
 
     await page.locator('button[aria-haspopup="menu"]').click();
     await page.getByRole('menuitem', { name: 'Sign in' }).click();
@@ -21,7 +21,7 @@ test.describe('Shopper smoke', () => {
     await page.locator('button[type="submit"]').click();
 
     await page.waitForURL(/localhost:4200/);
-    await expect(page.locator('a.brand')).toBeVisible();
+    await expect(page.locator('mat-toolbar a.brand')).toBeVisible();
 
     await page.goto('/account/orders', { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'Your orders' })).toBeVisible();
