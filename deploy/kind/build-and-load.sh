@@ -46,9 +46,8 @@ IMAGES=(
 
 echo "Using container CLI: ${CLI}"
 echo "Kind cluster: ${CLUSTER_NAME}"
-
-${CLI} pull mariadb:10
-load_image "mariadb:10"
+# mariadb:10 is not kind-loaded — Helm uses pullPolicy IfNotPresent so the
+# node pulls from Docker Hub (avoids multi-arch kind load / ctr digest failures).
 
 for entry in "${IMAGES[@]}"; do
   IFS='|' read -r image context dockerfile <<< "${entry}"

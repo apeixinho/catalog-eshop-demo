@@ -77,7 +77,7 @@ That mode **does** conflict with Compose on those ports. Prefer Ingress defaults
 | [`kind/cluster-config.yaml`](kind/cluster-config.yaml) | Ephemeral CI cluster (`catalog-eshop`) |
 | [`kind/cluster-config-nodeport.yaml`](kind/cluster-config-nodeport.yaml) | Optional Compose-parity NodePort cluster |
 | [`kind/create-cluster.sh`](kind/create-cluster.sh) | Create CI-style cluster only |
-| [`kind/build-and-load.sh`](kind/build-and-load.sh) | Build `*:staging` images + `kind load` |
+| [`kind/build-and-load.sh`](kind/build-and-load.sh) | Build `*:staging` images + `kind load` (MariaDB is cluster-pulled) |
 | [`helm/catalog-eshop/`](helm/catalog-eshop/) | Helm chart (Deployments, Services, Ingress, PVCs, …) |
 
 ## Wiring
