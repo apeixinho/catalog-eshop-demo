@@ -1,6 +1,12 @@
 package com.app.catalog.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +15,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -50,7 +51,16 @@ class AuthServerApplicationTests {
     @Test
     void loginPageIsReachable() throws Exception {
         mockMvc.perform(get("/login").accept(MediaType.TEXT_HTML))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("theme-default")))
+            .andExpect(content().string(containsString("family=Sora")));
+    }
+
+    @Test
+    void loginPageAppliesThemeFromQuery() throws Exception {
+        mockMvc.perform(get("/login").param("theme", "alternative").accept(MediaType.TEXT_HTML))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("theme-alternative")));
     }
 
     @Test

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-init
+  labels:
+    {{- include "catalog-eshop.labels" . | nindent 4 }}
+data:
+  01-create-auth-db.sql: |
+    CREATE DATABASE IF NOT EXISTS catalog_auth;
+    GRANT ALL PRIVILEGES ON catalog_auth.* TO 'catalog_user'@'%';
+    FLUSH PRIVILEGES;

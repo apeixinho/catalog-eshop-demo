@@ -187,13 +187,19 @@ class ManageOrderIntegrationTest {
         product.setActive(false);
         productRepository.saveAndFlush(product);
 
-        mockMvc.perform(delete("/api/v1/manage/orders/" + orderId)
-                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
-            .andExpect(status().isConflict());
+        try {
+            mockMvc.perform(delete("/api/v1/manage/orders/" + orderId)
+                    .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+                .andExpect(status().isConflict());
 
-        assertThat(orderRepository.findById(orderId)).isPresent();
-        assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
-            .isEqualTo(stockAfterPayment);
+            assertThat(orderRepository.findById(orderId)).isPresent();
+            assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
+                .isEqualTo(stockAfterPayment);
+        } finally {
+            Product restore = productRepository.findById(1L).orElseThrow();
+            restore.setActive(true);
+            productRepository.saveAndFlush(restore);
+        }
     }
 
     @Test
@@ -211,15 +217,21 @@ class ManageOrderIntegrationTest {
         inactiveTarget.setActive(false);
         productRepository.saveAndFlush(inactiveTarget);
 
-        mockMvc.perform(delete("/api/v1/manage/orders/" + multiOrderId)
-                .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
-            .andExpect(status().isConflict());
+        try {
+            mockMvc.perform(delete("/api/v1/manage/orders/" + multiOrderId)
+                    .with(managerJwt(jwtGrantedAuthoritiesConverter, "manager-1")))
+                .andExpect(status().isConflict());
 
-        assertThat(orderRepository.findById(multiOrderId)).isPresent();
-        assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
-            .isEqualTo(stock1AfterPay);
-        assertThat(productRepository.findById(2L).orElseThrow().getUnitsInStock())
-            .isEqualTo(stock2AfterPay);
+            assertThat(orderRepository.findById(multiOrderId)).isPresent();
+            assertThat(productRepository.findById(1L).orElseThrow().getUnitsInStock())
+                .isEqualTo(stock1AfterPay);
+            assertThat(productRepository.findById(2L).orElseThrow().getUnitsInStock())
+                .isEqualTo(stock2AfterPay);
+        } finally {
+            Product restore = productRepository.findById(2L).orElseThrow();
+            restore.setActive(true);
+            productRepository.saveAndFlush(restore);
+        }
     }
 
     @Test

@@ -35,22 +35,24 @@ import { LocaleService } from '../i18n/locale.service';
   styles: `
     .account {
       max-width: 36rem;
-      padding-block: 3.5rem;
+      padding-block: 3rem 5rem;
     }
 
     @media (min-width: 640px) {
       .account {
-        padding-block: 5rem;
+        padding-block: 4.5rem 6rem;
       }
     }
 
     h1 {
-      margin: 0 0 2.5rem;
-      font: var(--mat-sys-display-small);
+      margin: 0 0 2rem;
+      font-size: clamp(1.85rem, 4vw, 2.5rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
     }
 
     mat-card {
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
 
     dl {
@@ -60,21 +62,23 @@ import { LocaleService } from '../i18n/locale.service';
     }
 
     dl > div {
-      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
       padding-bottom: 1rem;
     }
 
     dt {
       margin: 0 0 0.35rem;
-      font: var(--mat-sys-label-medium);
-      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--mat-sys-primary);
     }
 
     dd {
       margin: 0;
-      font: var(--mat-sys-body-large);
+      font-size: 1.1rem;
+      font-weight: 600;
     }
 
     .muted {

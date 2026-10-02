@@ -45,7 +45,17 @@ See [Stack CI workflow](../.github/workflows/stack-ci.yml):
 | PR or push to `staging` / `main` | Always **`Compose staging smoke`** (`compose.staging.yml`, MariaDB + nginx) |
 | Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, …) | Also **`Compose staging smoke`** on any branch |
 
-Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on **`dev`** (locale pinned to US English in the test).
+### Kind CI (Helm on Kind)
+
+See [Kind CI workflow](../.github/workflows/kind-ci.yml):
+
+| Trigger | Job |
+|---------|-----|
+| PR or push to `staging` | Always **`Kind staging smoke`** (build `*:staging` images → Kind → ingress-nginx → Helm → curl `*.localhost`) |
+
+Does **not** run on `dev` (Compose remains the `dev` gate). Kind smoke is the Kubernetes check on the staging promotion lane alongside Compose staging smoke.
+
+Smoke = `deploy/kind/build-and-load.sh` + `helm upgrade --install` + curl health/products/SPA via Ingress hosts (same chart defaults as local `kind-dev`).
 
 **Required check names** (exact job `name:` values — use these in Rulesets):
 
@@ -53,6 +63,9 @@ Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playw
 |----------|----------------|
 | `Compose dev smoke` | Every PR/push targeting `dev` |
 | `Compose staging smoke` | Every PR/push targeting `staging` or `main`; also stack-file changes elsewhere |
+| `Kind staging smoke` | Every PR/push targeting `staging` |
+
+Compose smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on **`dev`** (locale pinned to US English in the test).
 
 ## Promoting changes
 
@@ -92,10 +105,39 @@ If merge is blocked with *“Required status check … is expected”*, the chec
 
 Configuration: [`.github/dependabot.yml`](../.github/dependabot.yml)
 
-- All bumps target **`dev`**.
+- **Version updates** (scheduled): all bumps target **`dev`**.
 - **npm:** `@angular/*` updates are **grouped** into one weekly PR — merge as a unit to avoid peer dependency mismatches.
 - **Maven:** `org.springframework.boot:*` bumps are grouped per service.
 - **GitHub Actions:** grouped weekly bump on `dev`.
+
+### Security updates vs the promotion ladder
+
+Dependabot has two products:
+
+| Product | What it does | Target in this repo |
+|---------|----------------|---------------------|
+| **Version updates** | Weekly bumps from `dependabot.yml` | **`dev`** (`target-branch`) |
+| **Security updates** | Auto-PRs from Dependabot alerts | **Disabled** (repo Settings → Advanced Security) |
+
+Security-update auto-PRs open against the repository **default branch** (`main`), even when `target-branch: "dev"` is set for version updates. That bypasses `dev` → `staging` → `main`, so automated security update PRs are **turned off**.
+
+**Still enabled:** Dependabot **alerts** (Security tab). When an alert appears:
+
+1. Open a normal PR into **`dev`** that bumps the lockfile (or wait for a weekly version-update PR if it covers the same package).
+2. Promote through staging/main as usual — do **not** merge dependency fixes straight to `main`.
+
+To re-check the setting:
+
+```bash
+gh api repos/apeixinho/catalog-eshop-demo --jq '.security_and_analysis.dependabot_security_updates'
+# expect: {"status":"disabled"}
+```
+
+Re-enable only if you intentionally want alert PRs on `main` (not recommended with this ladder):
+
+```bash
+gh api -X PUT repos/apeixinho/catalog-eshop-demo/automated-security-fixes
+```
 
 Frontend runtime `@angular/*` versions are **pinned exactly** in `frontend/package.json` (no `^`). After a Dependabot Angular PR merges, run locally:
 

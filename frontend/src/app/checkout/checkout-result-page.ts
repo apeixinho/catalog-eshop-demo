@@ -82,17 +82,20 @@ const MAX_DELAY_MS = 3000;
   styles: `
     .result {
       max-width: 42rem;
-      padding-block: 5rem;
+      padding-block: 4.5rem 6rem;
       margin-inline: auto;
     }
 
     mat-card-content {
       text-align: center;
+      padding-block: 2rem !important;
     }
 
     h1 {
       margin: 0 0 1rem;
-      font: var(--mat-sys-display-small);
+      font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
     }
 
     .state {
@@ -110,16 +113,19 @@ const MAX_DELAY_MS = 3000;
 
     .tracking {
       display: inline-block;
-      border: 1px solid var(--mat-sys-outline-variant);
-      border-radius: var(--mat-sys-corner-small);
+      border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
+      border-radius: var(--catalog-radius-md);
+      background: var(--catalog-surface-mist);
       padding: 1.25rem 2rem;
       margin-bottom: 2rem;
     }
 
     .tracking-value {
       margin: 0;
-      font: var(--mat-sys-title-medium);
-      letter-spacing: 0.06em;
+      font-family: var(--catalog-font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     .actions {

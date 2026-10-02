@@ -1,0 +1,110 @@
+# Default: Ingress + ClusterIP on a shared Kind cluster (kind-dev or CI).
+# Hostnames use *.localhost (resolves to 127.0.0.1) via ingress-nginx on :80.
+# Does not bind Compose ports 4200/8090/8091/9000.
+#
+# Opt into Compose-parity NodePorts: -f values-nodeport.yaml (needs matching extraPortMappings).
+
+namespace: catalog-eshop
+
+images:
+  mariadb:
+    repository: mariadb
+    tag: "10"
+    pullPolicy: IfNotPresent
+  authServer:
+    repository: eshop-auth-server
+    tag: staging
+    pullPolicy: Never
+  paymentService:
+    repository: eshop-payment-service
+    tag: staging
+    pullPolicy: Never
+  backend:
+    repository: eshop-backend
+    tag: staging
+    pullPolicy: Never
+  frontend:
+    repository: eshop-frontend
+    tag: staging
+    pullPolicy: Never
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    frontend: catalog.localhost
+    backend: api.catalog.localhost
+    auth: auth.catalog.localhost
+    payment: payment.catalog.localhost
+
+# Used only when ingress.enabled=false (see values-nodeport.yaml).
+nodePorts: {}
+
+config:
+  authIssuerUri: http://auth.catalog.localhost
+  authBrowserIssuerUri: http://auth.catalog.localhost
+  frontendOrigin: http://catalog.localhost
+  apiBaseUrl: http://api.catalog.localhost
+  oauthClientId: catalog-spa
+  oauthAudience: catalog-api
+  oauthRedirectUri: http://catalog.localhost/auth/callback
+  oauthPostLogoutRedirectUri: http://catalog.localhost/products
+  oauthScopes: "openid profile catalog.read catalog.write"
+  paymentPublicBaseUrl: http://payment.catalog.localhost
+  paymentCheckoutResultUrl: http://catalog.localhost/checkout/result
+  # In-cluster DNS (Compose-compatible service names)
+  jwkSetUri: http://auth-server:9000/oauth2/jwks
+  paymentBaseUrl: http://payment-service:8091
+  paymentWebhookUrl: http://backend:8090/api/v1/checkout/payment-webhook
+  mariadbDatabase: catalog_db
+  authMariadbDatabase: catalog_auth
+  mariadbUsername: catalog_user
+
+secrets:
+  mariadbPassword: catalog_pass
+  mariadbRootPassword: catalog_root_pass
+  paymentApiSecret: dev-payment-secret
+  paymentWebhookSecret: dev-payment-secret
+
+persistence:
+  mariadb:
+    size: 2Gi
+  authJwk:
+    size: 64Mi
+
+resources:
+  mariadb:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  authServer:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  paymentService:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  backend:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  frontend:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

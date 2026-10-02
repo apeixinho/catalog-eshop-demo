@@ -43,6 +43,8 @@ jobs:
               - "frontend/docker-entrypoint.staging.sh"
               - "frontend/nginx.conf"
               - ".github/workflows/stack-ci.yml"
+              - "deploy/**"
+              - ".github/workflows/kind-ci.yml"
 
   compose-staging:
     name: Compose staging smoke
