@@ -19,6 +19,7 @@ Default exposure: Ingress + `*.localhost` on host **80/443**, so Kind does not c
 - Kind, kubectl, Helm 3
 - Docker or Podman (`build-and-load.sh` auto-detects; Podman uses `kind load image-archive` when needed)
 - Host **80** and **443** free for ingress (Windows may require elevation for `:80`)
+- After install, `setup-kind-dev.sh` caps ingress-nginx `worker-processes` (avoids fatal worker exits / hung `:80` on Docker Desktop & Podman)
 
 ## Quick start
 
