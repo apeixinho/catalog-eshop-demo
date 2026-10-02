@@ -56,34 +56,32 @@ The API binds the order to the JWT `sub`, builds lines from `{productId, quantit
 
 ## Docker Compose
 
-Do **not** run both stacks at once (shared host ports `4200` / `8090` / `8091` / `9000`). They are separate Compose projects with distinct image tags (`*:dev` / `*:staging`).
+`compose.dev.yml` and `compose.staging.yml` are separate projects (`eshop-dev` / `eshop-staging`, tags `*:dev` / `*:staging`) but bind the same host ports (`4200`, `8090`, `8091`, `9000`) — run only one at a time. `podman compose` is equivalent where Docker isn’t available.
 
 ```bash
 cp .env.example .env
 
-# Dev — ng serve on :4200, H2, in-memory auth
+# Dev — ng serve :4200, H2, in-memory auth
 docker compose -f compose.dev.yml up --build
 
-# Staging — nginx SPA (:4200→80), MariaDB catalog_db + catalog_auth
+# Staging — nginx SPA 4200→80, MariaDB catalog_db + catalog_auth
 docker compose -f compose.staging.yml up --build
 ```
 
-On Windows with Podman, use `podman compose` the same way if `docker` is not available.
-
-Staging frontend is nginx on container port **80** (`4200:80`). Dev frontend is `ng serve` on **4200** (`4200:4200`). An empty reply on `:4200` usually means the nginx image was started behind the dev port map.
+Frontend publish maps differ: staging `4200:80` (nginx), dev `4200:4200` (`ng serve`). An empty response on `:4200` usually means the wrong image is bound to that map.
 
 ## Kubernetes (Kind + Helm)
 
-Prefer a durable shared cluster (`kind-dev`) with Ingress — Compose ports stay free:
+Default path: durable `kind-dev` + Ingress on `:80`/`:443` (Compose ports unused). See [deploy/README.md](deploy/README.md).
 
 ```bash
 bash deploy/kind/setup-kind-dev.sh
-bash deploy/kind/build-and-load.sh   # CONTAINER_CLI=podman if needed
+bash deploy/kind/build-and-load.sh   # CONTAINER_CLI=podman when needed
 helm upgrade --install catalog-eshop deploy/helm/catalog-eshop \
   -n catalog-eshop --create-namespace
 ```
 
-Open http://catalog.localhost (also `api` / `auth` / `payment` `.catalog.localhost`). Uninstall with Helm only — do not delete the Kind cluster for app teardown. Full steps: [deploy/README.md](deploy/README.md).
+SPA / API / auth / payment: `http://{catalog,api,auth,payment}.catalog.localhost`. Tear down the release with Helm (`helm uninstall`); leave the Kind cluster intact unless you intend a full cluster wipe.
 
 ### Runtime SPA config
 
@@ -103,40 +101,32 @@ Catalog `image_url` values are relative (`assets/images/products/...`). Files li
 
 ## CI/CD
 
-**CI** is GitHub Actions (GHA). There is no image publish or deploy yet (that would be optional later via GHCR — GitHub Container Registry at `ghcr.io`).
+GitHub Actions only (no image publish / deploy yet).
 
 ### Per-service unit CI
 
-Path-filtered workflows (status badges at the top of this file):
+Path-filtered workflows (badges above). Frontend: Node 22 (Angular needs ≥ 22.22.3). JVM: Java 21.
 
-| Workflow | Triggers on changes to | Steps |
-|----------|------------------------|-------|
-| 📊 [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | Vitest (`test:ci:coverage`, v8 report) → build |
-| 📊 [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn verify package` — JaCoCo **≥75%** instruction coverage (excludes entity/DTO/mapper/config/utils) |
-| ✅ [Auth Server CI](.github/workflows/auth-server.yml) | `auth-server/**` | `mvn -B test package` |
-| ✅ [Payment Service CI](.github/workflows/payment-service.yml) | `payment-service/**` | `mvn -B test package` |
-| 🎭 [Stack CI](.github/workflows/stack-ci.yml) | Compose / e2e paths | Dev Compose smoke + Playwright shopper flow |
+| Workflow | Paths | Steps |
+|----------|-------|-------|
+| [Frontend CI](.github/workflows/frontend.yml) | `frontend/**` | Vitest `test:ci:coverage` → build |
+| [Backend CI](.github/workflows/backend.yml) | `backend/**` | `mvn verify package` (JaCoCo ≥75% instruction; entity/DTO/mapper/config/utils excluded) |
+| [Auth Server CI](.github/workflows/auth-server.yml) | `auth-server/**` | `mvn -B test package` |
+| [Payment Service CI](.github/workflows/payment-service.yml) | `payment-service/**` | `mvn -B test package` |
+| [Stack CI](.github/workflows/stack-ci.yml) | Compose / e2e | Compose smoke; Playwright on `dev` |
 
-> ℹ️ The frontend workflow runs on Node 22 (Angular 22 requires Node ≥ 22.22.3). The JVM services build on Java 21.
+### Stack / Kind smoke
 
-### Stack CI (Compose smoke)
+| Trigger | Job |
+|---------|-----|
+| PR/push → `dev` | `compose.dev.yml` (H2) |
+| PR/push → `staging` / `main` | `compose.staging.yml` (MariaDB + nginx) |
+| PR/push → `staging` | + [Kind staging smoke](.github/workflows/kind-ci.yml) |
+| Stack path changes | + `compose.staging.yml` on any branch |
 
-[Stack CI](.github/workflows/stack-ci.yml) is a separate workflow (Option B) for cross-cutting Compose/Docker paths and promotion branches:
+Smoke: `docker compose up --build --wait`, curl health/products/SPA; Playwright on `dev` with locale pinned to US. Branch `staging` is the promotion lane; Compose project `eshop-staging` is only the MariaDB runtime profile — CI does not host a shared environment.
 
-| When | What runs |
-|------|-----------|
-| PR or push to `dev` | Always `compose.dev.yml` smoke (H2) |
-| PR or push to `staging` / `main` | Always `compose.staging.yml` smoke (MariaDB + nginx) |
-| PR or push to `staging` | Also **Kind staging smoke** ([kind-ci.yml](.github/workflows/kind-ci.yml)) |
-| Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `auth-server/init-db/**`, …) | Also `compose.staging.yml` smoke on any branch |
-
-Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on `dev` (locale pinned to US English in the test).
-
-Git branch `staging` is the promotion lane; Compose project `eshop-staging` is the MariaDB runtime profile — Stack CI maps **when** that stack is exercised, it does not host a long-lived environment.
-
-### Branch promotion
-
-See [Branching and CI](docs/branching-and-ci.md) for the `dev` → `staging` → `main` workflow, GitHub Rulesets, and Dependabot merge guidance.
+Promotion ladder, Rulesets, Dependabot: [Branching and CI](docs/branching-and-ci.md).
 
 ## Docs
 
