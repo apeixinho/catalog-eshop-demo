@@ -43,7 +43,7 @@ Themes are applied via Sass (`src/styles.scss`) and toggled on `html` through `T
 
 Notifications use `MatSnackBar`; tables use `MatTable`; forms use `MatFormField` / `MatInput` / `MatSelect`.
 
-Component tests use [Material harnesses](https://material.angular.dev/guide/using-component-harnesses) via `src/app/testing/material-harness-support.ts`. Specs that render Material components should include `provideNoopAnimations()`.
+Component tests use [Material harnesses](https://material.angular.dev/guide/using-component-harnesses) via `src/app/testing/material-harness-support.ts`.
 
 ## Test
 
