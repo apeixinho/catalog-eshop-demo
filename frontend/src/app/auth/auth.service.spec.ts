@@ -12,6 +12,7 @@ import { provideRouter, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { authInterceptor } from './auth.interceptor';
 import { LocaleService } from '../i18n/locale.service';
+import { ThemeService } from '../theme/theme.service';
 import { CartService } from '../cart/cart.service';
 import { NotificationService } from '../shared/notification.service';
 import { CatalogApiService } from '../shared/catalog-api.service';
@@ -37,6 +38,7 @@ describe('AuthService', () => {
         provideHttpClientTesting(),
         AuthService,
         LocaleService,
+        ThemeService,
         CartService,
         CatalogApiService,
         {
@@ -94,6 +96,34 @@ describe('AuthService', () => {
     const result = await auth.ensureValidAccessToken();
 
     expect(result).toBe(token);
+  });
+
+  it('login redirects with ui_locales and current theme', async () => {
+    const theme = TestBed.inject(ThemeService);
+    const i18n = TestBed.inject(LocaleService);
+    theme.select('alternative');
+
+    const hrefs: string[] = [];
+    vi.stubGlobal('location', {
+      ...window.location,
+      set href(value: string) {
+        hrefs.push(value);
+      },
+      get href() {
+        return hrefs[hrefs.length - 1] ?? '';
+      },
+    });
+
+    try {
+      await auth.login('/checkout');
+      expect(hrefs).toHaveLength(1);
+      const url = new URL(hrefs[0]);
+      expect(url.searchParams.get('ui_locales')).toBe(i18n.language());
+      expect(url.searchParams.get('theme')).toBe('alternative');
+      expect(url.searchParams.get('client_id')).toBe(environment.oauthClientId);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('handleCallback exchanges code for tokens and navigates to return URL', async () => {

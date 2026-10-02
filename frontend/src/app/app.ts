@@ -109,10 +109,15 @@ import { ThemeId } from './theme/theme.models';
                 <button
                   mat-menu-item
                   type="button"
-                  [class.active-option]="theme.themeId() === option.id"
+                  [attr.aria-checked]="theme.themeId() === option.id"
+                  [style.color]="theme.themeId() === option.id ? 'var(--mat-sys-primary)' : null"
+                  [style.font-weight]="theme.themeId() === option.id ? '650' : null"
                   (click)="onThemeChange(option.id)"
                 >
-                  <mat-icon [class.option-check-hidden]="theme.themeId() !== option.id"
+                  <!-- Overlay menus leave :host styles; bind visibility on the icon itself. -->
+                  <mat-icon
+                    aria-hidden="true"
+                    [style.visibility]="theme.themeId() === option.id ? 'visible' : 'hidden'"
                     >check</mat-icon
                   >
                   <span>{{ i18n.t(option.labelKey) }}</span>
@@ -125,11 +130,18 @@ import { ThemeId } from './theme/theme.models';
                 <button
                   mat-menu-item
                   type="button"
-                  [class.active-option]="i18n.countryCode() === option.countryCode"
+                  [attr.aria-checked]="i18n.countryCode() === option.countryCode"
+                  [style.color]="
+                    i18n.countryCode() === option.countryCode ? 'var(--mat-sys-primary)' : null
+                  "
+                  [style.font-weight]="i18n.countryCode() === option.countryCode ? '650' : null"
                   (click)="onLocaleChange(option.countryCode)"
                 >
                   <mat-icon
-                    [class.option-check-hidden]="i18n.countryCode() !== option.countryCode"
+                    aria-hidden="true"
+                    [style.visibility]="
+                      i18n.countryCode() === option.countryCode ? 'visible' : 'hidden'
+                    "
                     >check</mat-icon
                   >
                   <span>{{ i18n.optionLabel(option) }}</span>
@@ -308,15 +320,6 @@ import { ThemeId } from './theme/theme.models';
         text-align: right;
         align-items: flex-end;
       }
-    }
-
-    :host ::ng-deep .active-option {
-      color: var(--mat-sys-primary);
-      font-weight: 650;
-    }
-
-    :host ::ng-deep .option-check-hidden {
-      visibility: hidden;
     }
   `,
 })
