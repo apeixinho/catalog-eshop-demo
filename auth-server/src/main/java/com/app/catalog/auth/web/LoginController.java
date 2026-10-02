@@ -29,6 +29,8 @@ public class LoginController {
     public String login(
         @RequestParam(required = false) String lang,
         @RequestParam(name = "ui_locales", required = false) String uiLocales,
+        @RequestParam(required = false) String theme,
+        @RequestParam(name = "ui_theme", required = false) String uiTheme,
         HttpServletRequest request,
         HttpServletResponse response,
         Model model) {
@@ -45,7 +47,11 @@ public class LoginController {
         }
         localeResolver.setLocale(request, response, Locale.forLanguageTag(normalized));
 
+        String resolvedTheme = LoginThemeFilter.resolve(request, firstNonBlank(theme, uiTheme));
+        request.getSession(true).setAttribute(LoginThemeFilter.SESSION_ATTR, resolvedTheme);
+
         model.addAttribute("shopUrl", frontendOrigin + "/products");
+        model.addAttribute("theme", resolvedTheme);
         return "login";
     }
 

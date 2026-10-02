@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CartService } from '../cart/cart.service';
 import { LocaleService } from '../i18n/locale.service';
+import { ThemeService } from '../theme/theme.service';
 
 interface TokenResponse {
   access_token: string;
@@ -35,6 +36,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly i18n = inject(LocaleService);
+  private readonly theme = inject(ThemeService);
   /** Lazy: avoids AuthService → CartService → HttpClient → interceptor → AuthService cycle at boot. */
   private readonly injector = inject(Injector);
 
@@ -116,7 +118,8 @@ export class AuthService {
       .set('state', state)
       .set('code_challenge', challenge)
       .set('code_challenge_method', 'S256')
-      .set('ui_locales', this.i18n.language());
+      .set('ui_locales', this.i18n.language())
+      .set('theme', this.theme.themeId());
 
     window.location.href = `${environment.authIssuer}/oauth2/authorize?${params.toString()}`;
   }
