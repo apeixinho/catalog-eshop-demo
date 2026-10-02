@@ -144,4 +144,48 @@ describe('App', () => {
     expect(labels.some((label) => label.includes(locale.t('nav.theme')))).toBe(true);
     expect(labels.some((label) => label.includes(locale.t('nav.locale')))).toBe(true);
   });
+
+  it('shows a check only on the selected theme and locale options', async () => {
+    initApp();
+    theme.select('default');
+    locale.selectCountry('US');
+    fixture.detectChanges();
+
+    const loader = harnessLoader(fixture);
+    const [accountMenu] = await loader.getAllHarnesses(MatMenuHarness);
+    await accountMenu.open();
+
+    const openSubmenu = async (label: string) => {
+      const items = await accountMenu.getItems();
+      const texts = await Promise.all(items.map((item) => item.getText()));
+      const index = texts.findIndex((text) => text.includes(label));
+      expect(index).toBeGreaterThanOrEqual(0);
+      const trigger = items[index];
+      await (await trigger.host()).dispatchEvent('mouseenter');
+      const submenu = await trigger.getSubmenu();
+      expect(submenu).toBeTruthy();
+      await submenu!.open();
+      return submenu!;
+    };
+
+    const visibleChecksInOpenPanel = () => {
+      const panels = document.querySelectorAll('.cdk-overlay-pane .mat-mdc-menu-panel');
+      const panel = panels[panels.length - 1];
+      expect(panel).toBeTruthy();
+      return [...panel!.querySelectorAll('mat-icon')].filter(
+        (icon) =>
+          icon.textContent?.trim() === 'check' && getComputedStyle(icon).visibility !== 'hidden',
+      );
+    };
+
+    const themeSub = await openSubmenu(locale.t('nav.theme'));
+    expect(visibleChecksInOpenPanel().length).toBe(1);
+    await themeSub.close();
+    await accountMenu.close();
+
+    await accountMenu.open();
+    const localeSub = await openSubmenu(locale.t('nav.locale'));
+    expect(visibleChecksInOpenPanel().length).toBe(1);
+    await localeSub.close();
+  });
 });
