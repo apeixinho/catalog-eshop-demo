@@ -1,12 +1,34 @@
-:root {
-  --bg: oklch(98.2% 0.004 100);
-  --surface: oklch(95.5% 0.006 95);
-  --fg: oklch(17% 0.012 280);
-  --muted: oklch(52% 0.014 280);
-  --border: oklch(89% 0.008 100);
-  --accent: oklch(42% 0.045 135);
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-sans: 'DM Sans', 'Helvetica Neue', sans-serif;
+/* Catalog Market Fresh — keep in sync with frontend/src/styles.scss */
+:root,
+html.theme-default {
+  --bg: #f4f7f5;
+  --surface: #e8f0eb;
+  --fg: #1c1f1e;
+  --muted: #5a635e;
+  --border: #c8d5cc;
+  --accent: #1b7a4a;
+  --accent-hover: #15653c;
+  --error: #a12828;
+  --glow: color-mix(in srgb, var(--accent) 14%, transparent);
+  --glow-alt: color-mix(in srgb, #a3b818 12%, transparent);
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-sans: 'Figtree', system-ui, sans-serif;
+  --radius-sm: 0.75rem;
+  --radius-md: 1.15rem;
+  --shadow-sm: 0 1px 2px rgb(28 31 30 / 4%), 0 4px 12px rgb(28 31 30 / 4%);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.theme-alternative {
+  --bg: #faf6f3;
+  --surface: #f3e9e2;
+  --fg: #1c1f1e;
+  --muted: #6b5f57;
+  --border: #e0d0c4;
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
+  --glow: color-mix(in srgb, var(--accent) 14%, transparent);
+  --glow-alt: color-mix(in srgb, #1b7a4a 10%, transparent);
 }
 
 *,
@@ -23,21 +45,37 @@ body {
   padding: 1.5rem;
   font-family: var(--font-sans);
   color: var(--fg);
-  background: var(--bg);
+  letter-spacing: 0.005em;
+  background:
+    radial-gradient(1200px 480px at 12% -10%, var(--glow), transparent 60%),
+    radial-gradient(900px 420px at 92% 0%, var(--glow-alt), transparent 55%),
+    var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
 .login {
   width: min(100% - 2rem, 22rem);
+  animation: fade-up 0.55s var(--ease-out) both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login__brand {
   margin: 0 0 0.5rem;
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 2.5rem;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .login__lede,
@@ -49,7 +87,7 @@ body {
 }
 
 .login__error {
-  color: #a12828;
+  color: var(--error);
   margin: 0 0 1.25rem;
   font-size: 0.875rem;
 }
@@ -62,54 +100,61 @@ body {
 .login__form {
   display: grid;
   gap: 0.25rem;
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 70%, white);
+  box-shadow: var(--shadow-sm);
 }
 
 .login__field {
   display: grid;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--muted);
 }
 
 .login__field input {
   width: 100%;
-  padding: 0.625rem 0;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  background: transparent;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   color: var(--fg);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
 
 .login__field input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent) 30%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .login__form button {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   width: 100%;
-  padding: 1rem 2rem;
+  padding: 0.9rem 1.5rem;
   border: 0;
-  border-radius: 0;
-  background: var(--fg);
-  color: var(--bg);
-  font: inherit;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.25s var(--ease-out), transform 0.2s var(--ease-out);
 }
 
 .login__form button:hover {
-  background: var(--accent);
-  filter: none;
+  background: var(--accent-hover);
+}
+
+.login__form button:active {
+  transform: translateY(1px);
 }
 
 .login__hint {
@@ -128,6 +173,7 @@ body {
 .login__cancel a {
   color: var(--muted);
   font-size: 0.875rem;
+  font-weight: 500;
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: color 0.2s ease, border-color 0.2s ease;
@@ -137,4 +183,3 @@ body {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
-
