@@ -116,34 +116,29 @@ import { LocaleService } from '../i18n/locale.service';
     .empty h1,
     .cart h1 {
       margin: 0 0 1rem;
-      font: var(--mat-sys-display-small);
-    }
-
-    @media (min-width: 640px) {
-      .empty h1,
-      .cart h1 {
-        font: var(--mat-sys-display-medium);
-      }
+      font-size: clamp(1.85rem, 4vw, 2.75rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
     }
 
     .empty p {
       margin: 0 auto 2.5rem;
-      max-width: 24rem;
+      max-width: 26rem;
       line-height: 1.6;
     }
 
     .cart {
-      max-width: 48rem;
-      padding-block: 3.5rem;
+      max-width: 52rem;
+      padding-block: 3rem 5rem;
     }
 
     @media (min-width: 640px) {
       .cart {
-        padding-block: 5rem;
+        padding-block: 4rem 6rem;
       }
 
       .cart h1 {
-        margin-bottom: 4rem;
+        margin-bottom: 2.5rem;
       }
     }
 
@@ -151,32 +146,38 @@ import { LocaleService } from '../i18n/locale.service';
       list-style: none;
       margin: 0;
       padding: 0;
+      border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent);
+      border-radius: var(--catalog-radius-lg);
+      background: color-mix(in srgb, var(--mat-sys-surface) 90%, white);
+      box-shadow: var(--catalog-shadow-sm);
+      overflow: hidden;
     }
 
     li {
       display: flex;
       gap: 1.25rem;
-      padding-block: 2rem;
+      padding: 1.35rem 1.25rem;
     }
 
     @media (min-width: 640px) {
       li {
-        gap: 2rem;
+        gap: 1.75rem;
+        padding: 1.75rem 1.5rem;
       }
     }
 
     .thumb {
-      width: 5rem;
+      width: 5.25rem;
       flex-shrink: 0;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 4 / 5;
       overflow: hidden;
-      background: var(--mat-sys-surface-container);
-      border-radius: var(--mat-sys-corner-small);
+      background: var(--catalog-surface-mist);
+      border-radius: var(--catalog-radius-sm);
     }
 
     @media (min-width: 640px) {
       .thumb {
-        width: 6rem;
+        width: 6.5rem;
       }
     }
 
@@ -198,12 +199,14 @@ import { LocaleService } from '../i18n/locale.service';
 
     h2 {
       margin: 0;
-      font: var(--mat-sys-title-large);
+      font-size: 1.15rem;
+      font-weight: 650;
+      letter-spacing: -0.025em;
     }
 
     .details p {
       margin: 0.35rem 0 0;
-      font: var(--mat-sys-body-medium);
+      font-size: 0.9rem;
       color: var(--mat-sys-on-surface-variant);
       display: -webkit-box;
       -webkit-line-clamp: 1;
@@ -222,12 +225,17 @@ import { LocaleService } from '../i18n/locale.service';
     .qty {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.15rem;
+      padding: 0.15rem;
+      border-radius: var(--catalog-radius-pill);
+      background: var(--catalog-surface-mist);
+      border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 65%, transparent);
     }
 
     .qty-value {
-      font: var(--mat-sys-body-medium);
-      width: 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 650;
+      width: 1.75rem;
       text-align: center;
     }
 
@@ -238,11 +246,13 @@ import { LocaleService } from '../i18n/locale.service';
     }
 
     .price {
-      font: var(--mat-sys-body-medium);
+      font-family: var(--catalog-font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
     }
 
     .summary {
-      margin-top: 3rem;
+      margin-top: 1.75rem;
     }
 
     .summary-inner {
@@ -261,20 +271,24 @@ import { LocaleService } from '../i18n/locale.service';
 
     .label {
       margin: 0 0 0.25rem;
-      font: var(--mat-sys-label-medium);
-      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--mat-sys-primary);
     }
 
     .total {
       margin: 0;
-      font: var(--mat-sys-headline-small);
+      font-family: var(--catalog-font-display);
+      font-size: 1.65rem;
+      font-weight: 750;
+      letter-spacing: -0.03em;
     }
 
     .note {
       margin: 0.5rem 0 0;
-      font: var(--mat-sys-body-small);
+      font-size: 0.85rem;
     }
   `,
 })

@@ -1,0 +1,20 @@
+# Optional Kind config for Compose-parity NodePorts (values-nodeport.yaml).
+# Prefer kind-dev.yaml + Ingress defaults — this conflicts with Compose host ports.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: catalog-eshop-nodeport
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30420
+        hostPort: 4200
+        protocol: TCP
+      - containerPort: 30890
+        hostPort: 8090
+        protocol: TCP
+      - containerPort: 30891
+        hostPort: 8091
+        protocol: TCP
+      - containerPort: 30900
+        hostPort: 9000
+        protocol: TCP

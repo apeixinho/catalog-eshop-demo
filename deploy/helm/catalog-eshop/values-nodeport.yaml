@@ -1,0 +1,27 @@
+# Optional Compose-parity exposure (fixed NodePorts + localhost:* URLs).
+# Pair with deploy/kind/cluster-config-nodeport.yaml (or equivalent extraPortMappings).
+# Conflicts with Compose on those host ports — prefer default Ingress values instead.
+#
+# Usage:
+#   kind create cluster --config deploy/kind/cluster-config-nodeport.yaml
+#   helm upgrade --install catalog-eshop deploy/helm/catalog-eshop \
+#     -n catalog-eshop --create-namespace \
+#     -f deploy/helm/catalog-eshop/values-nodeport.yaml
+ingress:
+  enabled: false
+
+nodePorts:
+  frontend: 30420
+  backend: 30890
+  payment: 30891
+  auth: 30900
+
+config:
+  authIssuerUri: http://localhost:9000
+  authBrowserIssuerUri: http://localhost:9000
+  frontendOrigin: http://localhost:4200
+  apiBaseUrl: http://localhost:8090
+  oauthRedirectUri: http://localhost:4200/auth/callback
+  oauthPostLogoutRedirectUri: http://localhost:4200/products
+  paymentPublicBaseUrl: http://localhost:8091
+  paymentCheckoutResultUrl: http://localhost:4200/checkout/result

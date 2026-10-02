@@ -1,3 +1,8 @@
+# Version updates target `dev` (promotion ladder: feature → dev → staging → main).
+# Dependabot *security update* auto-PRs are disabled in repo Settings → Advanced Security
+# because those PRs ignore this target-branch and open against the default branch (`main`).
+# Keep Dependabot *alerts* enabled; apply security lockfile bumps via PRs into `dev`.
+# See docs/branching-and-ci.md § Dependabot.
 version: 2
 updates:
   - package-ecosystem: npm

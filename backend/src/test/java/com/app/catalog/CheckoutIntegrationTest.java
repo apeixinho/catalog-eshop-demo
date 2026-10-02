@@ -113,15 +113,22 @@ class CheckoutIntegrationTest {
     @Test
     void checkoutRejectsInsufficientStock() throws Exception {
         Product product = productRepository.findById(1L).orElseThrow();
+        int stockBefore = product.getUnitsInStock();
         product.setUnitsInStock(0);
         productRepository.saveAndFlush(product);
 
-        mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-no-stock"))
-                .header("Idempotency-Key", "no-stock-" + System.nanoTime())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(PURCHASE_BODY))
-            .andExpect(status().isBadRequest());
+        try {
+            mockMvc.perform(post("/api/v1/checkout/purchase")
+                    .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-no-stock"))
+                    .header("Idempotency-Key", "no-stock-" + System.nanoTime())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(PURCHASE_BODY))
+                .andExpect(status().isBadRequest());
+        } finally {
+            Product restore = productRepository.findById(1L).orElseThrow();
+            restore.setUnitsInStock(stockBefore);
+            productRepository.saveAndFlush(restore);
+        }
     }
 
     @Test
@@ -130,12 +137,18 @@ class CheckoutIntegrationTest {
         product.setActive(false);
         productRepository.saveAndFlush(product);
 
-        mockMvc.perform(post("/api/v1/checkout/purchase")
-                .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-inactive"))
-                .header("Idempotency-Key", "inactive-" + System.nanoTime())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(PURCHASE_BODY))
-            .andExpect(status().isBadRequest());
+        try {
+            mockMvc.perform(post("/api/v1/checkout/purchase")
+                    .with(catalogWriteJwt(jwtGrantedAuthoritiesConverter, "user-inactive"))
+                    .header("Idempotency-Key", "inactive-" + System.nanoTime())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(PURCHASE_BODY))
+                .andExpect(status().isBadRequest());
+        } finally {
+            Product restore = productRepository.findById(1L).orElseThrow();
+            restore.setActive(true);
+            productRepository.saveAndFlush(restore);
+        }
     }
 
     @Test

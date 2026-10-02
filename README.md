@@ -23,6 +23,7 @@ Greenfield monorepo: Angular 22 storefront, Spring Boot 4.1 resource server, and
 | `payment-service/` | Mock hosted checkout — Spring Boot 4.1 (port `8091`; webhook finalizes orders) |
 | `compose.dev.yml` | Local stack (H2, in-memory auth users) |
 | `compose.staging.yml` | Staging-like stack (MariaDB for API + auth) |
+| `deploy/` | Kind cluster + Helm chart (staging-like on Kubernetes) |
 | `docs/` | OAuth2 access policy, environments, OpenAPI |
 
 
@@ -71,6 +72,19 @@ On Windows with Podman, use `podman compose` the same way if `docker` is not ava
 
 Staging frontend is nginx on container port **80** (`4200:80`). Dev frontend is `ng serve` on **4200** (`4200:4200`). An empty reply on `:4200` usually means the nginx image was started behind the dev port map.
 
+## Kubernetes (Kind + Helm)
+
+Prefer a durable shared cluster (`kind-dev`) with Ingress — Compose ports stay free:
+
+```bash
+bash deploy/kind/setup-kind-dev.sh
+bash deploy/kind/build-and-load.sh   # CONTAINER_CLI=podman if needed
+helm upgrade --install catalog-eshop deploy/helm/catalog-eshop \
+  -n catalog-eshop --create-namespace
+```
+
+Open http://catalog.localhost (also `api` / `auth` / `payment` `.catalog.localhost`). Uninstall with Helm only — do not delete the Kind cluster for app teardown. Full steps: [deploy/README.md](deploy/README.md).
+
 ### Runtime SPA config
 
 Compose injects `/env.js` (`API_BASE_URL`, `AUTH_ISSUER_URI`, `OAUTH_*`) so the browser talks to host-published ports. Token `iss` stays `http://localhost:9000`; the backend fetches JWKS from `http://auth-server:9000/oauth2/jwks` inside the network.
@@ -113,6 +127,7 @@ Path-filtered workflows (status badges at the top of this file):
 |------|-----------|
 | PR or push to `dev` | Always `compose.dev.yml` smoke (H2) |
 | PR or push to `staging` / `main` | Always `compose.staging.yml` smoke (MariaDB + nginx) |
+| PR or push to `staging` | Also **Kind staging smoke** ([kind-ci.yml](.github/workflows/kind-ci.yml)) |
 | Stack files change (`compose*.yml`, Dockerfiles, `.env.example`, `auth-server/init-db/**`, …) | Also `compose.staging.yml` smoke on any branch |
 
 Smoke = `docker compose up --build --wait`, curl health/products/SPA, then Playwright (`e2e/`) on `dev` (locale pinned to US English in the test).
