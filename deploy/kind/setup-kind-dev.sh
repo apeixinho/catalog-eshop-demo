@@ -25,6 +25,13 @@ kubectl apply -f "${INGRESS_MANIFEST}"
 kubectl -n ingress-nginx wait --for=condition=ready pod \
   -l app.kubernetes.io/component=controller --timeout=180s
 
+# Kind/Docker Desktop often reports a huge CPU count; nginx worker_processes=auto
+# then spawns workers that exit with fatal code 2 and host :80 hangs.
+kubectl -n ingress-nginx patch configmap ingress-nginx-controller --type merge \
+  -p '{"data":{"worker-processes":"2","worker-connections":"1024"}}'
+kubectl -n ingress-nginx rollout restart deploy/ingress-nginx-controller
+kubectl -n ingress-nginx rollout status deploy/ingress-nginx-controller --timeout=180s
+
 echo
 echo "kind-dev ready (context: ${CONTEXT})."
 echo "Next:"
