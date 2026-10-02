@@ -42,11 +42,11 @@ Backend integration tests: build JWT post-processors via [JwtTestSupport](backen
 
 ## Running the stack
 
-See README Quick start (JVM) or Docker Compose. **Do not** run `compose.dev.yml` and `compose.staging.yml` simultaneously — shared ports `4200/8090/8091/9000`.
+See README Quick start (JVM) or Docker Compose. `compose.dev.yml` and `compose.staging.yml` share host ports `4200/8090/8091/9000`.
 
 ### Kind / Helm (`deploy/`)
 
-Staging-like Kubernetes path: [deploy/README.md](deploy/README.md). Prefer durable **`kind-dev`** + ingress-nginx (`bash deploy/kind/setup-kind-dev.sh`); app lifecycle is Helm/namespace only.
+Staging-like K8s: [deploy/README.md](deploy/README.md). Durable **`kind-dev`** + ingress-nginx (`bash deploy/kind/setup-kind-dev.sh`); app lifecycle is Helm/namespace only.
 
 - Default URLs: `http://catalog.localhost`, `api` / `auth` / `payment` subdomains (Ingress on host `:80`). Compose ports `4200/8090/8091/9000` stay free.
 - Optional Compose-parity NodePorts: `-f deploy/helm/catalog-eshop/values-nodeport.yaml` (conflicts with Compose).

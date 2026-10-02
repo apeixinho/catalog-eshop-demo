@@ -20,11 +20,11 @@ This validates Dockerfiles, MariaDB init/Flyway, and health endpoints. It does *
 
 Flyway on the auth-server is **disabled** by default (`spring.flyway.enabled: false`) so the default/dev profile does not need MariaDB.
 
-## Do not run both Compose files together
+## Compose port binding
 
-`compose.dev.yml` and `compose.staging.yml` both publish host ports `4200`, `8090`, `8091`, and `9000`. They are separate Compose projects (`eshop-dev` / `eshop-staging`) with distinct image tags, but only one stack should be up at a time.
+Both Compose files publish `4200`, `8090`, `8091`, and `9000` (projects `eshop-dev` / `eshop-staging`, distinct image tags). Only one stack can bind those ports.
 
-**Port mismatch tip:** staging frontend is nginx on container port **80** (`4200:80`). Dev frontend is `ng serve` on container port **4200** (`4200:4200`). If `:4200` returns an empty reply while the frontend container looks “up”, the wrong image is probably running (nginx behind a `4200:4200` map).
+Frontend maps: staging `4200:80` (nginx), dev `4200:4200` (`ng serve`). Empty replies on `:4200` usually mean a staging image behind the dev publish map (or the reverse).
 
 ## Staging (`compose.staging.yml`)
 
