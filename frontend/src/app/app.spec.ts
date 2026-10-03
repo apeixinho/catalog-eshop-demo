@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -42,7 +41,6 @@ describe('App', () => {
       imports: [App],
       providers: [
         provideRouter([]),
-        provideNoopAnimations(),
         provideHttpClient(),
         provideHttpClientTesting(),
         LocaleService,
