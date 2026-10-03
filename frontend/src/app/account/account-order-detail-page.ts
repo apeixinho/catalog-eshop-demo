@@ -35,7 +35,9 @@ import { OrderDetail } from '../shared/models';
           <table mat-table [dataSource]="detail.items" class="items-table">
             <ng-container matColumnDef="product">
               <th mat-header-cell *matHeaderCellDef>{{ i18n.t('orders.product') }}</th>
-              <td mat-cell *matCellDef="let item">#{{ item.productId }}</td>
+              <td mat-cell *matCellDef="let item">
+                <a [routerLink]="['/products', item.productId]">#{{ item.productId }}</a>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="quantity">

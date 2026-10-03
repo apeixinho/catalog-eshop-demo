@@ -76,6 +76,16 @@ describe('AccountOrderDetailPage', () => {
     expect(component.order()?.orderTrackingNumber).toBe('TRK-1');
   });
 
+  it('links each line item to the product detail page', async () => {
+    await setup('TRK-1');
+
+    const productLink = fixture.nativeElement.querySelector(
+      'a[href="/products/1"]',
+    ) as HTMLAnchorElement | null;
+    expect(productLink).not.toBeNull();
+    expect(productLink?.textContent?.trim()).toBe('#1');
+  });
+
   it('reloads when tracking route param changes', async () => {
     const component = await setup('TRK-1');
     api.getMyOrder.mockClear();
