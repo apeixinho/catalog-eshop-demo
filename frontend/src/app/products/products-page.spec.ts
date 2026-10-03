@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PageEvent } from '@angular/material/paginator';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -61,7 +60,6 @@ describe('ProductsPage', () => {
       imports: [ProductsPage],
       providers: [
         provideRouter([]),
-        provideNoopAnimations(),
         { provide: CatalogApiService, useValue: api },
         { provide: CartService, useValue: cart },
         { provide: LocaleService, useValue: localeMock },
