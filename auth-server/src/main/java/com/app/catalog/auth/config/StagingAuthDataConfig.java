@@ -1,5 +1,7 @@
 package com.app.catalog.auth.config;
 
+import java.util.List;
+
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.jackson.SecurityJacksonModules;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -17,6 +20,10 @@ import org.springframework.security.oauth2.server.authorization.client.JdbcRegis
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
+
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 @Configuration
 @Profile("staging")
@@ -48,7 +55,22 @@ public class StagingAuthDataConfig {
         JdbcTemplate jdbcTemplate,
         RegisteredClientRepository registeredClientRepository
     ) {
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        JdbcOAuth2AuthorizationService service =
+            new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        // Allow List.of() / ImmutableCollections types already persisted in token
+        // metadata so OIDC logout (findByToken → deserialize) does not 400.
+        service.setAuthorizationRowMapper(
+            new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationRowMapper(
+                registeredClientRepository, authorizationJsonMapper()));
+        return service;
+    }
+
+    private static JsonMapper authorizationJsonMapper() {
+        ClassLoader classLoader = StagingAuthDataConfig.class.getClassLoader();
+        BasicPolymorphicTypeValidator.Builder builder = BasicPolymorphicTypeValidator.builder()
+            .allowIfSubType("java.util.ImmutableCollections");
+        List<JacksonModule> modules = SecurityJacksonModules.getModules(classLoader, builder);
+        return JsonMapper.builder().addModules(modules).build();
     }
 
     @Bean

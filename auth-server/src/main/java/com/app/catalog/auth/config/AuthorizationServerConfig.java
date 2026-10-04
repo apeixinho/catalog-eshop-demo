@@ -1,6 +1,7 @@
 package com.app.catalog.auth.config;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -123,7 +124,11 @@ public class AuthorizationServerConfig {
     OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
         return context -> {
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getClaims().audience(List.of(audience));
+                // Prefer Collections.singletonList over List.of: JDBC authorization
+                // metadata is Jackson-serialized, and List.of uses
+                // ImmutableCollections$ListN which the default polymorphic
+                // type validator rejects on read (breaks OIDC logout lookup).
+                context.getClaims().audience(Collections.singletonList(audience));
                 Authentication principal = context.getPrincipal();
                 if (principal != null) {
                     List<String> roles = principal.getAuthorities().stream()
