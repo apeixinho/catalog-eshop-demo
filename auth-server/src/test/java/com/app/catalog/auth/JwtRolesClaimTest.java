@@ -60,5 +60,10 @@ class JwtRolesClaimTest {
         List<String> roles = (List<String>) claims.getClaim("roles");
         assertThat(roles).containsExactlyInAnyOrderElementsOf(expectedRoles);
         assertThat(claims.getClaimAsString("preferred_username")).isEqualTo(username);
+        // Must stay a Jackson-friendly concrete list (not List.of / ImmutableCollections)
+        // so JDBC OAuth2Authorization metadata can round-trip for OIDC logout.
+        assertThat(claims.getAudience()).containsExactly("catalog-api");
+        assertThat(claims.getAudience().getClass().getName())
+            .doesNotContain("ImmutableCollections");
     }
 }
