@@ -36,7 +36,7 @@ public class AccountOrderServiceImpl implements AccountOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public OrderDetailResponse getMyOrder(String oauthSub, String trackingNumber) {
+    public OrderDetailResponse getMyOrder(String oauthSub, String trackingNumber, String lang) {
         requireOauthSub(oauthSub);
         if (trackingNumber == null || trackingNumber.isBlank()) {
             throw new IllegalArgumentException("Order tracking number is required");
@@ -46,7 +46,7 @@ public class AccountOrderServiceImpl implements AccountOrderService {
         if (order.getCustomer() == null || !oauthSub.equals(order.getCustomer().getOauthSub())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown order");
         }
-        return orderDetailMapperService.toDetail(order);
+        return orderDetailMapperService.toDetail(order, lang);
     }
 
     private static void requireOauthSub(String oauthSub) {
