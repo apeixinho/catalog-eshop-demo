@@ -40,6 +40,8 @@ export interface OrderSummary {
 
 export interface OrderItem {
   productId: number;
+  productName: string;
+  categoryName: string;
   imageUrl: string;
   unitPrice: number;
   quantity: number;

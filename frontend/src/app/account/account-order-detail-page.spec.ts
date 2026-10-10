@@ -31,6 +31,8 @@ describe('AccountOrderDetailPage', () => {
     items: [
       {
         productId: 1,
+        productName: 'Crash Course in Python',
+        categoryName: 'Books',
         imageUrl: '/img.png',
         unitPrice: 14.99,
         quantity: 2,
@@ -84,6 +86,14 @@ describe('AccountOrderDetailPage', () => {
     ) as HTMLAnchorElement | null;
     expect(productLink).not.toBeNull();
     expect(productLink?.textContent?.trim()).toBe('#1');
+  });
+
+  it('shows product title and category for each line item', async () => {
+    await setup('TRK-1');
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Crash Course in Python');
+    expect(text).toContain('Books');
   });
 
   it('reloads when tracking route param changes', async () => {

@@ -40,20 +40,20 @@ public class ManageOrderServiceImpl implements ManageOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public OrderDetailResponse getOrder(Long id) {
+    public OrderDetailResponse getOrder(Long id, String lang) {
         Order order = findOrder(id);
-        return orderDetailMapperService.toDetail(order);
+        return orderDetailMapperService.toDetail(order, lang);
     }
 
     @Override
     @Transactional
-    public OrderDetailResponse updateOrder(Long id, UpdateOrderRequest request) {
+    public OrderDetailResponse updateOrder(Long id, UpdateOrderRequest request, String lang) {
         Order order = findOrder(id);
         OrderStatus current = order.getStatus();
         OrderStatus next = request.status();
 
         if (current == next) {
-            return orderDetailMapperService.toDetail(order);
+            return orderDetailMapperService.toDetail(order, lang);
         }
         if (current != OrderStatus.PENDING || next != OrderStatus.CANCELLED) {
             throw new ResponseStatusException(
@@ -63,7 +63,7 @@ public class ManageOrderServiceImpl implements ManageOrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         Order saved = orderRepository.save(order);
-        return orderDetailMapperService.toDetail(saved);
+        return orderDetailMapperService.toDetail(saved, lang);
     }
 
     @Override

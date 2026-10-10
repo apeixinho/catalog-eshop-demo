@@ -11,9 +11,9 @@ public interface ManageOrderService {
 
     Page<OrderSummaryResponse> listOrders(Pageable pageable);
 
-    OrderDetailResponse getOrder(Long id);
+    OrderDetailResponse getOrder(Long id, String lang);
 
-    OrderDetailResponse updateOrder(Long id, UpdateOrderRequest request);
+    OrderDetailResponse updateOrder(Long id, UpdateOrderRequest request, String lang);
 
     void deleteOrder(Long id);
 }
