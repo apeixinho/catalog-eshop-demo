@@ -40,6 +40,16 @@ import { OrderDetail } from '../shared/models';
               </td>
             </ng-container>
 
+            <ng-container matColumnDef="productName">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('orders.productTitle') }}</th>
+              <td mat-cell *matCellDef="let item">{{ item.productName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef>{{ i18n.t('catalog.category') }}</th>
+              <td mat-cell *matCellDef="let item">{{ item.categoryName }}</td>
+            </ng-container>
+
             <ng-container matColumnDef="quantity">
               <th mat-header-cell *matHeaderCellDef>{{ i18n.t('checkout.quantity') }}</th>
               <td mat-cell *matCellDef="let item">{{ item.quantity }}</td>
@@ -105,7 +115,13 @@ export class AccountOrderDetailPage {
   private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(LocaleService);
 
-  readonly displayedColumns = ['product', 'quantity', 'unitPrice'] as const;
+  readonly displayedColumns = [
+    'product',
+    'productName',
+    'category',
+    'quantity',
+    'unitPrice',
+  ] as const;
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);

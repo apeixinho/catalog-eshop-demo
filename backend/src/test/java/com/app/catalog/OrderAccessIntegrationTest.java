@@ -103,10 +103,15 @@ class OrderAccessIntegrationTest {
 
     @Test
     void userCanGetOwnOrderDetail() throws Exception {
-        mockMvc.perform(get("/api/v1/account/orders/" + trackingNumber).with(userJwt("user-order-access")))
+        mockMvc.perform(get("/api/v1/account/orders/" + trackingNumber)
+                .param("lang", "en")
+                .with(userJwt("user-order-access")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.orderTrackingNumber").value(trackingNumber))
-            .andExpect(jsonPath("$.customer.email").value("ada-order-access@example.com"));
+            .andExpect(jsonPath("$.customer.email").value("ada-order-access@example.com"))
+            .andExpect(jsonPath("$.items[0].productId").value(1))
+            .andExpect(jsonPath("$.items[0].productName").value("Crash Course in Python"))
+            .andExpect(jsonPath("$.items[0].categoryName").value("Books"));
     }
 
     @Test

@@ -93,8 +93,10 @@ export class CatalogApiService {
   }
 
   getMyOrder(trackingNumber: string): Observable<OrderDetail> {
+    const params = this.withLang(new HttpParams());
     return this.http.get<OrderDetail>(
       `${this.base}/account/orders/${encodeURIComponent(trackingNumber)}`,
+      { params },
     );
   }
 
@@ -104,11 +106,13 @@ export class CatalogApiService {
   }
 
   getManageOrder(id: number): Observable<OrderDetail> {
-    return this.http.get<OrderDetail>(`${this.base}/manage/orders/${id}`);
+    const params = this.withLang(new HttpParams());
+    return this.http.get<OrderDetail>(`${this.base}/manage/orders/${id}`, { params });
   }
 
   updateManageOrder(id: number, status: OrderStatus): Observable<OrderDetail> {
-    return this.http.put<OrderDetail>(`${this.base}/manage/orders/${id}`, { status });
+    const params = this.withLang(new HttpParams());
+    return this.http.put<OrderDetail>(`${this.base}/manage/orders/${id}`, { status }, { params });
   }
 
   deleteManageOrder(id: number): Observable<void> {

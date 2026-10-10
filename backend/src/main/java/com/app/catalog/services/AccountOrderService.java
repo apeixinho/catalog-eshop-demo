@@ -10,5 +10,5 @@ public interface AccountOrderService {
 
     Page<OrderSummaryResponse> listMyOrders(String oauthSub, Pageable pageable);
 
-    OrderDetailResponse getMyOrder(String oauthSub, String trackingNumber);
+    OrderDetailResponse getMyOrder(String oauthSub, String trackingNumber, String lang);
 }
