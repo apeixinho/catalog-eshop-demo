@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.catalog.dto.OrderDetailResponse;
@@ -35,9 +36,10 @@ public class AccountOrderController {
     @GetMapping("/{trackingNumber}")
     public OrderDetailResponse getMyOrder(
         @AuthenticationPrincipal Jwt jwt,
-        @PathVariable String trackingNumber
+        @PathVariable String trackingNumber,
+        @RequestParam(required = false) String lang
     ) {
-        return accountOrderService.getMyOrder(requireSubject(jwt), trackingNumber);
+        return accountOrderService.getMyOrder(requireSubject(jwt), trackingNumber, lang);
     }
 
     private static String requireSubject(Jwt jwt) {

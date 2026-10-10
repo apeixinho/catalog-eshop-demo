@@ -134,9 +134,11 @@ describe('CatalogApiService', () => {
     req.flush({ content: [] });
   });
 
-  it('getMyOrder encodes tracking number', () => {
+  it('getMyOrder encodes tracking number and includes lang', () => {
     api.getMyOrder('TRK-99').subscribe();
-    const req = httpMock.expectOne(`${base}/account/orders/TRK-99`);
+    const req = httpMock.expectOne(
+      (r) => r.url === `${base}/account/orders/TRK-99` && r.params.get('lang') === 'en',
+    );
     req.flush({});
   });
 
@@ -150,13 +152,17 @@ describe('CatalogApiService', () => {
 
   it('getManageOrder fetches by id', () => {
     api.getManageOrder(12).subscribe();
-    const req = httpMock.expectOne(`${base}/manage/orders/12`);
+    const req = httpMock.expectOne(
+      (r) => r.url === `${base}/manage/orders/12` && r.params.get('lang') === 'en',
+    );
     req.flush({});
   });
 
   it('updateManageOrder sends status body', () => {
     api.updateManageOrder(7, 'CANCELLED').subscribe();
-    const req = httpMock.expectOne(`${base}/manage/orders/7`);
+    const req = httpMock.expectOne(
+      (r) => r.url === `${base}/manage/orders/7` && r.params.get('lang') === 'en',
+    );
 
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ status: 'CANCELLED' });

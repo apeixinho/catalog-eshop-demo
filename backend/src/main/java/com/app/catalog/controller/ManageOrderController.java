@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,16 +37,20 @@ public class ManageOrderController {
     }
 
     @GetMapping("/{id}")
-    public OrderDetailResponse getOrder(@PathVariable Long id) {
-        return manageOrderService.getOrder(id);
+    public OrderDetailResponse getOrder(
+        @PathVariable Long id,
+        @RequestParam(required = false) String lang
+    ) {
+        return manageOrderService.getOrder(id, lang);
     }
 
     @PutMapping("/{id}")
     public OrderDetailResponse updateOrder(
         @PathVariable Long id,
-        @Valid @RequestBody UpdateOrderRequest request
+        @Valid @RequestBody UpdateOrderRequest request,
+        @RequestParam(required = false) String lang
     ) {
-        return manageOrderService.updateOrder(id, request);
+        return manageOrderService.updateOrder(id, request, lang);
     }
 
     @DeleteMapping("/{id}")
