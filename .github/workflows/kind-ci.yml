@@ -50,6 +50,43 @@ jobs:
             -n catalog-eshop --create-namespace \
             --wait --timeout 15m
 
+      - name: Smoke checks
+        run: |
+          set -euo pipefail
+          # Ingress can lag Deployment Available; retry until hosts answer 2xx.
+          smoke_get() {
+            local url="$1" out="$2"
+            local i
+            for i in $(seq 1 30); do
+              if curl -sf --connect-timeout 2 --max-time 10 "$url" | tee "$out"; then
+                echo
+                return 0
+              fi
+              echo "retry ${i}/30: ${url}" >&2
+              sleep 2
+            done
+            echo "smoke failed: ${url}" >&2
+            curl -sS -D- --max-time 10 "$url" || true
+            return 1
+          }
+          smoke_get http://auth.catalog.localhost/actuator/health /tmp/auth-health.json
+          smoke_get http://payment.catalog.localhost/actuator/health /tmp/payment-health.json
+          smoke_get http://api.catalog.localhost/actuator/health /tmp/backend-health.json
+          smoke_get "http://api.catalog.localhost/api/v1/products?page=0&size=1" /tmp/products.json
+          code=""
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 10 http://catalog.localhost/ || true)
+            echo "frontend HTTP ${code} (try ${i}/30)"
+            case "${code}" in
+              200|301|302) break ;;
+            esac
+            sleep 2
+          done
+          case "${code}" in
+            200|301|302) ;;
+            *) echo "unexpected frontend status ${code}"; exit 1 ;;
+          esac
+
       - name: Diagnostics on failure
         if: failure()
         run: |
@@ -61,17 +98,3 @@ jobs:
             echo "===== logs $d ====="
             kubectl -n catalog-eshop logs "deploy/$d" --tail=120 || true
           done
-
-      - name: Smoke checks
-        run: |
-          set -euo pipefail
-          curl -sf http://auth.catalog.localhost/actuator/health | tee /tmp/auth-health.json
-          curl -sf http://payment.catalog.localhost/actuator/health | tee /tmp/payment-health.json
-          curl -sf http://api.catalog.localhost/actuator/health | tee /tmp/backend-health.json
-          curl -sf "http://api.catalog.localhost/api/v1/products?page=0&size=1" | tee /tmp/products.json
-          code=$(curl -s -o /dev/null -w "%{http_code}" http://catalog.localhost/)
-          echo "frontend HTTP ${code}"
-          case "${code}" in
-            200|301|302) ;;
-            *) echo "unexpected frontend status ${code}"; exit 1 ;;
-          esac
